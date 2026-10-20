@@ -1,0 +1,1878 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Casino Simülasyonu - Okul Ödevi Projesi</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;900&family=Poppins:wght@300;400;600;700&display=swap');
+
+        body {
+    /* Klasik yeşil çuha (felt) casino masası arkaplanı */
+    background: radial-gradient(circle at center, #1b4d24 0%, #0e2d14 60%, #051408 100%);
+    color: #ffffff;
+    font-family: 'Poppins', sans-serif;
+    min-height: 100vh;
+}
+
+        .cinzel-font {
+            font-family: 'Cinzel', serif;
+        }
+
+        /* Klasik Sade Yeşil Casino Paneli[cite: 1] */
+        .casino-panel {
+            background: rgba(10, 26, 14, 0.92);
+            border: 2px solid #d4af37;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+        }
+
+        .gold-border {
+            border: 1px solid #d4af37;
+        }
+
+        .gold-text {
+            color: #f1c40f;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+        }
+
+        /* Sade Altın Buton[cite: 1] */
+        .btn-gold {
+            background: linear-gradient(180deg, #f39c12 0%, #d4af37 100%);
+            color: #0b120c;
+            font-weight: 700;
+            transition: all 0.2s ease;
+            border: 1px solid #b78103;
+        }
+        .btn-gold:hover {
+            background: linear-gradient(180deg, #f1c40f 0%, #e67e22 100%);
+            transform: translateY(-1px);
+        }
+        .btn-gold:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Kart Dağıtma Animasyonu[cite: 1] */
+        @keyframes popInCard {
+            0% { transform: scale(0.3) translateY(-20px); opacity: 0; }
+            100% { transform: scale(1) translateY(0); opacity: 1; }
+        }
+        .card-anim {
+            animation: popInCard 0.25s ease-out forwards;
+        }
+
+        /* Gerçekçi Dikey Slot Makinesi Çark Kaydırma Animasyonu[cite: 1] */
+        .reel-container {
+            position: relative;
+            height: 120px;
+            overflow: hidden;
+            border: 2px solid #d4af37;
+            background: #ffffff;
+            border-radius: 12px;
+        }
+        .reel-strip {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: transform 0.1s linear;
+        }
+        .reel-symbol {
+            height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3.5rem;
+            user-select: none;
+        }
+        @keyframes reelRoll {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(-720px); }
+        }
+        .rolling {
+            animation: reelRoll 0.2s linear infinite;
+        }
+
+        /* Modal Overlay[cite: 1] */
+        .modal-backdrop {
+            background: rgba(0, 0, 0, 0.75);
+        }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.4); }
+        ::-webkit-scrollbar-thumb { background: #d4af37; border-radius: 3px; }
+    </style>
+</head>
+<body class="flex flex-col items-center justify-between min-h-screen p-3 md:p-6" onclick="initAudioOnInteraction()">
+
+    <!-- Yapımcı İmzası -->
+    <div class="fixed top-3 right-3 z-40 bg-black/80 border border-[#d4af37] px-3.5 py-1.5 rounded-full text-xs text-gray-200 shadow-md flex items-center gap-2">
+        <span>🎮 Proje Geliştirici:</span>
+        <a href="https://umutcanevismek52.github.io/umutcanevismek.github.io/" target="_blank" class="text-amber-400 font-bold hover:underline transition">Umutcan Evişmek</a>[cite: 1]
+    </div>
+
+    <!-- Üst Başlık & Bakiye Barı[cite: 1] -->
+    <header class="w-full max-w-4xl flex flex-col sm:flex-row items-center justify-between gap-4 mt-10 sm:mt-2 mb-6">
+        <div class="text-center sm:text-left cursor-pointer" onclick="playAudio('click'); goToMainMenu();">
+            <h1 class="cinzel-font text-2xl md:text-3xl font-extrabold gold-text tracking-wide">
+                🎰 CASİNO SİMÜLASYONU
+            </h1>
+            <p class="text-xs text-emerald-200/80 tracking-widest uppercase">Okul Projesi & Oyun Algoritmaları</p>
+        </div>
+
+        <div class="casino-panel px-5 py-2.5 rounded-2xl flex items-center gap-4 border border-[#d4af37]">
+            <div class="text-right">
+                <span class="text-[11px] text-gray-400 block uppercase font-medium">Bakiye</span>
+                <span id="balanceDisplay" class="text-lg md:text-xl font-bold text-emerald-400 tracking-wider">10.000 TL</span>
+            </div>
+            <button onclick="playAudio('click'); openDepositModal();" class="btn-gold px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1 shadow">
+                <span>💵 Para Ekle</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- BAKIYE YÜKLEME MODALI[cite: 1] -->
+    <div id="depositModal" class="fixed inset-0 z-50 flex items-center justify-center modal-backdrop hidden p-4">
+        <div class="casino-panel rounded-2xl p-6 max-w-md w-full relative">
+            <button onclick="playAudio('click'); closeDepositModal();" class="absolute top-4 right-4 text-gray-400 hover:text-white text-lg font-bold">✕</button>
+            
+            <h3 class="cinzel-font text-lg font-bold gold-text mb-2 text-center">💵 BAKIYE YÜKLE (Sanal Bakiye)</h3>
+            <p class="text-xs text-gray-300 text-center mb-5">Simülasyon bakiyenize eklemek istediğiniz miktarı seçin.</p>
+
+            <div class="grid grid-cols-2 gap-3 mb-4">
+                <button onclick="addCash(1000)" class="bg-emerald-900/60 border border-emerald-500/50 hover:bg-emerald-800 text-emerald-200 font-bold p-3 rounded-xl text-xs transition">
+                    +1.000 TL
+                </button>
+                <button onclick="addCash(5000)" class="bg-emerald-900/60 border border-emerald-500/50 hover:bg-emerald-800 text-emerald-200 font-bold p-3 rounded-xl text-xs transition">
+                    +5.000 TL
+                </button>
+                <button onclick="addCash(20000)" class="bg-emerald-900/60 border border-emerald-500/50 hover:bg-emerald-800 text-emerald-200 font-bold p-3 rounded-xl text-xs transition col-span-2">
+                    +20.000 TL (Sanal Bonus)
+                </button>
+            </div>
+
+            <div class="border-t border-amber-500/30 pt-4 flex gap-2">
+                <input type="number" id="customDepositInput" placeholder="Özel Miktar (TL)" class="bg-black/60 border border-amber-500/40 rounded-xl px-3 py-2 text-xs w-full text-amber-300 font-bold focus:outline-none">
+                <button onclick="addCustomCash()" class="btn-gold px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap">
+                    Yükle
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- NASIL OYNANIR EĞİTİM MODALI -->
+    <div id="tutorialModal" class="fixed inset-0 z-50 flex items-center justify-center modal-backdrop hidden p-4">
+        <div class="casino-panel rounded-2xl p-6 max-w-lg w-full relative border-2 border-amber-400 shadow-2xl">
+            <button onclick="playAudio('click'); closeTutorialModal();" class="absolute top-4 right-4 text-gray-400 hover:text-white text-lg font-bold">✕</button>
+            
+            <div class="text-3xl text-center mb-2" id="tutorialIcon">📖</div>
+            <h3 id="tutorialTitle" class="cinzel-font text-lg font-bold gold-text mb-3 text-center">Nasıl Oynanır?</h3>
+            
+            <div id="tutorialContent" class="text-xs md:text-sm text-gray-200 space-y-2 mb-6 bg-black/40 p-4 rounded-xl border border-amber-500/20 max-h-64 overflow-y-auto">
+                <!-- Dinamik içerik -->
+            </div>
+
+            <div class="flex items-center justify-between pt-2 border-t border-amber-500/30">
+                <label class="flex items-center gap-2 text-xs text-gray-300 cursor-pointer">
+                    <input type="checkbox" id="dontShowAgainCheck" class="rounded bg-black border-amber-500 text-amber-500 focus:ring-0">
+                    <span>Bir daha otomatik gösterme</span>
+                </label>
+                <button onclick="playAudio('click'); closeTutorialModal();" class="btn-gold px-6 py-2 rounded-xl text-xs font-bold">
+                    Oyuna Başla 🚀
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ANA İÇERİK BÖLGESİ[cite: 1] -->
+    <main class="w-full max-w-4xl flex-grow flex items-center justify-center">
+
+        <!-- 1. ANA MENÜ EKRANI[cite: 1] -->
+        <div id="mainMenuScreen" class="w-full casino-panel rounded-3xl p-6 md:p-8">
+            <h2 class="cinzel-font text-lg md:text-xl font-bold text-center gold-text mb-6">
+                LÜTFEN TEST ETMEK İSTEDİĞİNİZ OYUN SİMÜLASYONUNU SEÇİNİZ
+            </h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+
+                <!-- Oyun 1: Blackjack[cite: 1] -->
+                <div class="casino-panel rounded-2xl p-4 border border-amber-500/40 hover:border-amber-400 transition flex flex-col justify-between">
+                    <div>
+                        <div class="text-3xl mb-2">♠️</div>
+                        <h3 class="font-bold text-base text-amber-300">Casino 21 (Blackjack)</h3>
+                        <p class="text-xs text-gray-300 mt-1">Yapay zekaya karşı veya aynı cihazda arkadaşınla kapış.</p>
+                    </div>
+                    <div class="mt-4 flex gap-2">
+                        <button onclick="playAudio('click'); openGameWithTutorial('blackjackScreen');" class="flex-1 btn-gold py-2 rounded-xl text-xs font-bold uppercase">
+                            OYNA &rarr;
+                        </button>
+                        <button onclick="playAudio('click'); openManualTutorial('blackjack');" class="bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/40 px-3 py-2 rounded-xl text-xs font-bold" title="Nasıl Oynanır?">
+                            ❓
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Oyun 2: Slot[cite: 1] -->
+                <div class="casino-panel rounded-2xl p-4 border border-amber-500/40 hover:border-amber-400 transition flex flex-col justify-between">
+                    <div>
+                        <div class="text-3xl mb-2">🎰</div>
+                        <h3 class="font-bold text-base text-amber-300">Klasik Slot Makinesi</h3>
+                        <p class="text-xs text-gray-300 mt-1">Dikey dönen gerçekçi çarklar! Dengeli kazanma katsayısı.</p>
+                    </div>
+                    <div class="mt-4 flex gap-2">
+                        <button onclick="playAudio('click'); openGameWithTutorial('slotScreen');" class="flex-1 btn-gold py-2 rounded-xl text-xs font-bold uppercase">
+                            OYNA &rarr;
+                        </button>
+                        <button onclick="playAudio('click'); openManualTutorial('slot');" class="bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/40 px-3 py-2 rounded-xl text-xs font-bold" title="Nasıl Oynanır?">
+                            ❓
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Oyun 3: Mayın Tarlası[cite: 1] -->
+                <div class="casino-panel rounded-2xl p-4 border border-amber-500/40 hover:border-amber-400 transition flex flex-col justify-between">
+                    <div>
+                        <div class="text-3xl mb-2">💣</div>
+                        <h3 class="font-bold text-base text-amber-300">Mayın Tarlası</h3>
+                        <p class="text-xs text-gray-300 mt-1">Oyun başlamadan boyut ve mayın sayısını özelleştir.</p>
+                    </div>
+                    <div class="mt-4 flex gap-2">
+                        <button onclick="playAudio('click'); openGameWithTutorial('minesScreen');" class="flex-1 btn-gold py-2 rounded-xl text-xs font-bold uppercase">
+                            OYNA &rarr;
+                        </button>
+                        <button onclick="playAudio('click'); openManualTutorial('mines');" class="bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/40 px-3 py-2 rounded-xl text-xs font-bold" title="Nasıl Oynanır?">
+                            ❓
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Oyun 4: Aviator[cite: 1] -->
+                <div class="casino-panel rounded-2xl p-4 border border-amber-500/40 hover:border-amber-400 transition flex flex-col justify-between">
+                    <div>
+                        <div class="text-3xl mb-2">✈️</div>
+                        <h3 class="font-bold text-base text-amber-300">Aviator Uçak (Crash)</h3>
+                        <p class="text-xs text-gray-300 mt-1">Uçak yükseldikçe çarpan artar, düşmeden paranı çek.</p>
+                    </div>
+                    <div class="mt-4 flex gap-2">
+                        <button onclick="playAudio('click'); openGameWithTutorial('planeScreen');" class="flex-1 btn-gold py-2 rounded-xl text-xs font-bold uppercase">
+                            OYNA &rarr;
+                        </button>
+                        <button onclick="playAudio('click'); openManualTutorial('plane');" class="bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/40 px-3 py-2 rounded-xl text-xs font-bold" title="Nasıl Oynanır?">
+                            ❓
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Oyun 5: Zeus[cite: 1] -->
+                <div class="casino-panel rounded-2xl p-4 border border-amber-500/40 hover:border-amber-400 transition flex flex-col justify-between">
+                    <div>
+                        <div class="text-3xl mb-2">⚡</div>
+                        <h3 class="font-bold text-base text-amber-300">Zeus'un Gazabı</h3>
+                        <p class="text-xs text-gray-300 mt-1">4x4 sembol eşleşmesi ve şimşek çarpanı mekaniği.</p>
+                    </div>
+                    <div class="mt-4 flex gap-2">
+                        <button onclick="playAudio('click'); openGameWithTutorial('zeusScreen');" class="flex-1 btn-gold py-2 rounded-xl text-xs font-bold uppercase">
+                            OYNA &rarr;
+                        </button>
+                        <button onclick="playAudio('click'); openManualTutorial('zeus');" class="bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/40 px-3 py-2 rounded-xl text-xs font-bold" title="Nasıl Oynanır?">
+                            ❓
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Oyun 6: Zar Düellosu (Yapay Zeka / Arkadaşa Karşı) -->
+                <div class="casino-panel rounded-2xl p-4 border border-amber-500/40 hover:border-amber-400 transition flex flex-col justify-between">
+                    <div>
+                        <div class="text-3xl mb-2">🎲</div>
+                        <h3 class="font-bold text-base text-amber-300">Zar Düellosu</h3>
+                        <p class="text-xs text-gray-300 mt-1">Yapay zekaya veya aynı cihazda arkadaşına karşı zarları at!</p>
+                    </div>
+                    <div class="mt-4 flex gap-2">
+                        <button onclick="playAudio('click'); openGameWithTutorial('diceScreen');" class="flex-1 btn-gold py-2 rounded-xl text-xs font-bold uppercase">
+                            OYNA &rarr;
+                        </button>
+                        <button onclick="playAudio('click'); openManualTutorial('dice');" class="bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/40 px-3 py-2 rounded-xl text-xs font-bold" title="Nasıl Oynanır?">
+                            ❓
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Oyun 7: Rulet Tek Sayı[cite: 1] -->
+                <div class="casino-panel rounded-2xl p-4 border border-amber-500/40 hover:border-amber-400 transition sm:col-span-2 lg:col-span-3 flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <div>
+                        <div class="text-3xl mb-2">🎯</div>
+                        <h3 class="font-bold text-base text-amber-300">Rulet Tek Sayı (35x Çarpan)</h3>
+                        <p class="text-xs text-gray-300 mt-1">0 ile 36 arasında şanslı sayını seç, çarkı döndür ve 35 katı büyük ödülü kazan!</p>
+                    </div>
+                    <div class="flex gap-2 w-full sm:w-auto">
+                        <button onclick="playAudio('click'); openGameWithTutorial('rouletteScreen');" class="flex-1 sm:flex-initial px-5 py-2.5 btn-gold rounded-xl text-xs font-bold uppercase whitespace-nowrap">
+                            RULET OYNA &rarr;
+                        </button>
+                        <button onclick="playAudio('click'); openManualTutorial('roulette');" class="bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/40 px-3 py-2.5 rounded-xl text-xs font-bold" title="Nasıl Oynanır?">
+                            ❓
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- 2. BLACKJACK (21) EKRANI[cite: 1] -->
+        <div id="blackjackScreen" class="w-full casino-panel rounded-3xl p-5 md:p-8 hidden">
+            <div class="flex items-center justify-between mb-4 border-b border-amber-500/30 pb-3">
+                <div class="flex items-center gap-3">
+                    <h2 class="cinzel-font text-lg md:text-xl font-bold gold-text">♠️ Casino 21 (Blackjack)</h2>
+                    <button onclick="playAudio('click'); openManualTutorial('blackjack');" class="text-xs bg-amber-500/20 hover:bg-amber-500/40 text-amber-300 border border-amber-500/40 px-2.5 py-1 rounded-lg font-semibold transition">
+                        📖 Nasıl Oynanır?
+                    </button>
+                </div>
+                <button onclick="playAudio('click'); goToMainMenu();" class="text-xs bg-red-900/60 hover:bg-red-800 text-red-200 border border-red-500/50 px-3 py-1.5 rounded-xl font-semibold transition">
+                    &larr; Ana Menü
+                </button>
+            </div>
+
+            <div class="flex justify-center gap-3 mb-4 p-2 bg-black/40 rounded-2xl border border-amber-500/20">
+                <button id="bjModeAiBtn" onclick="playAudio('click'); setBjMode('ai');" class="px-4 py-2 rounded-xl text-xs font-bold transition bg-amber-500 text-black">
+                    🤖 Yapay Zekaya Karşı
+                </button>
+                <button id="bjModeLocalBtn" onclick="playAudio('click'); setBjMode('local');" class="px-4 py-2 rounded-xl text-xs font-bold transition bg-gray-800 text-gray-300 hover:bg-gray-700">
+                    👥 Aynı Cihazda 2 Kişi
+                </button>
+            </div>
+
+            <div class="bg-emerald-950/80 border border-emerald-600/40 rounded-2xl p-4 md:p-6">
+                <div class="bg-black/50 rounded-xl p-3 mb-4 border border-emerald-800/40">
+                    <div class="flex justify-between items-center mb-2">
+                        <span id="bjOpponentName" class="font-bold text-xs text-amber-200">🤖 Yapay Zeka</span>
+                        <span class="text-xs bg-amber-500/20 px-2 py-0.5 rounded text-amber-300 border border-amber-500/30">
+                            Skor: <span id="bjOpponentScore" class="font-bold">0</span>
+                        </span>
+                    </div>
+                    <div id="bjOpponentCards" class="flex flex-wrap justify-center gap-2 min-h-[80px] items-center"></div>
+                </div>
+
+                <div id="bjMessage" class="text-center text-xs md:text-sm font-semibold text-amber-300 my-2 min-h-[24px]">
+                    Bahisini belirle ve Oyun Başlat butonuna bas.
+                </div>
+
+                <div class="bg-black/50 rounded-xl p-3 border border-emerald-800/40">
+                    <div class="flex justify-between items-center mb-2">
+                        <span id="bjPlayerName" class="font-bold text-xs text-amber-200">👤 Sen</span>
+                        <span class="text-xs bg-amber-500/20 px-2 py-0.5 rounded text-amber-300 border border-amber-500/30">
+                            Skor: <span id="bjPlayerScore" class="font-bold">0</span>
+                        </span>
+                    </div>
+                    <div id="bjPlayerCards" class="flex flex-wrap justify-center gap-2 min-h-[80px] items-center"></div>
+                </div>
+            </div>
+
+            <div class="mt-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+                <div id="bjBetControls" class="flex items-center gap-2 w-full sm:w-auto">
+                    <span class="text-xs text-amber-200 font-semibold">Bahis (TL):</span>
+                    <input type="number" id="bjBetInput" value="500" min="100" step="100" class="bg-black/70 border border-amber-500/40 rounded-xl px-3 py-2 text-xs w-28 text-center text-amber-300 font-bold focus:outline-none">
+                    <button onclick="startBlackjackRound()" class="btn-gold px-5 py-2 rounded-xl text-xs font-bold">
+                        🃏 Oyunu Başlat
+                    </button>
+                </div>
+
+                <div id="bjGameButtons" class="flex items-center gap-2 w-full sm:w-auto hidden">
+                    <button onclick="bjHit()" class="bg-emerald-700 hover:bg-emerald-600 text-white font-bold px-5 py-2 rounded-xl text-xs transition flex-1 shadow">
+                        ➕ Kart Çek (Hit)
+                    </button>
+                    <button onclick="bjStand()" class="bg-red-700 hover:bg-red-600 text-white font-bold px-5 py-2 rounded-xl text-xs transition flex-1 shadow">
+                        ✋ Dur (Stand)
+                    </button>
+                </div>
+
+                <button id="bjRestartBtn" onclick="playAudio('click'); resetBlackjackTable();" class="bg-blue-700 hover:bg-blue-600 text-white font-bold px-6 py-2 rounded-xl text-xs transition w-full sm:w-auto hidden">
+                    🔄 Yeni Elden Başla
+                </button>
+            </div>
+        </div>
+
+        <!-- 3. KLASİK SLOT EKRANI[cite: 1] -->
+        <div id="slotScreen" class="w-full casino-panel rounded-3xl p-5 md:p-8 hidden">
+            <div class="flex items-center justify-between mb-4 border-b border-amber-500/30 pb-3">
+                <div class="flex items-center gap-3">
+                    <h2 class="cinzel-font text-lg md:text-xl font-bold gold-text">🎰 KLASİK SLOT MAKİNESİ</h2>
+                    <button onclick="playAudio('click'); openManualTutorial('slot');" class="text-xs bg-amber-500/20 hover:bg-amber-500/40 text-amber-300 border border-amber-500/40 px-2.5 py-1 rounded-lg font-semibold transition">
+                        📖 Nasıl Oynanır?
+                    </button>
+                </div>
+                <button onclick="playAudio('click'); goToMainMenu();" class="text-xs bg-red-900/60 hover:bg-red-800 text-red-200 border border-red-500/50 px-3 py-1.5 rounded-xl font-semibold transition">
+                    &larr; Ana Menü
+                </button>
+            </div>
+
+            <div class="bg-gradient-to-b from-amber-950/80 via-black to-amber-950/80 border-2 border-amber-500 rounded-2xl p-4 my-4 shadow-xl">
+                <div class="grid grid-cols-3 gap-3 md:gap-5">
+                    <div class="reel-container">
+                        <div id="strip1" class="reel-strip">
+                            <div class="reel-symbol">💎</div><div class="reel-symbol">🪙</div><div class="reel-symbol">👑</div><div class="reel-symbol">🍒</div><div class="reel-symbol">🍋</div><div class="reel-symbol">7️⃣</div>
+                        </div>
+                    </div>
+                    <div class="reel-container">
+                        <div id="strip2" class="reel-strip">
+                            <div class="reel-symbol">🪙</div><div class="reel-symbol">👑</div><div class="reel-symbol">💎</div><div class="reel-symbol">🍋</div><div class="reel-symbol">🍒</div><div class="reel-symbol">7️⃣</div>
+                        </div>
+                    </div>
+                    <div class="reel-container">
+                        <div id="strip3" class="reel-strip">
+                            <div class="reel-symbol">👑</div><div class="reel-symbol">💎</div><div class="reel-symbol">🪙</div><div class="reel-symbol">7️⃣</div><div class="reel-symbol">🍒</div><div class="reel-symbol">🍋</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-black/40 rounded-xl p-2.5 text-[11px] text-amber-200 flex flex-wrap justify-around text-center mb-4 border border-amber-500/20">
+                <div>💎/🪙 3 Adet: <b class="text-amber-400">15x Jackpot</b></div>
+                <div>Aynı 3 Tane: <b class="text-amber-400">8x Kazanç</b></div>
+                <div>Aynı 2 Tane: <b class="text-amber-400">1.5x Amorti</b></div>
+            </div>
+
+            <div id="slotMessage" class="text-center font-bold text-xs md:text-sm text-amber-300 mb-4 min-h-[20px]">
+                Bahisini ayarla ve Çevir butonuna bas!
+            </div>
+
+            <div class="flex flex-col sm:flex-row items-center justify-center gap-3">
+                <div class="flex items-center gap-2">
+                    <span class="text-xs text-amber-200 font-semibold">Bahis (TL):</span>
+                    <input type="number" id="slotBetInput" value="400" min="100" step="100" class="bg-black/60 border border-amber-500/40 rounded-xl px-3 py-2 text-xs w-28 text-center text-amber-300 font-bold focus:outline-none">
+                </div>
+                <button id="slotSpinBtn" onclick="spinSlotMachine()" class="btn-gold px-8 py-2.5 rounded-xl text-sm font-bold w-full sm:w-auto">
+                    🎰 ÇARKLARI ÇEVİR
+                </button>
+            </div>
+        </div>
+
+        <!-- 4. MAYIN TARLASI EKRANI[cite: 1] -->
+        <div id="minesScreen" class="w-full casino-panel rounded-3xl p-5 md:p-8 hidden">
+            <div class="flex items-center justify-between mb-4 border-b border-amber-500/30 pb-3">
+                <div class="flex items-center gap-3">
+                    <h2 class="cinzel-font text-lg md:text-xl font-bold gold-text">💣 MAYIN TARLASI</h2>
+                    <button onclick="playAudio('click'); openManualTutorial('mines');" class="text-xs bg-amber-500/20 hover:bg-amber-500/40 text-amber-300 border border-amber-500/40 px-2.5 py-1 rounded-lg font-semibold transition">
+                        📖 Nasıl Oynanır?
+                    </button>
+                </div>
+                <button onclick="playAudio('click'); goToMainMenu();" class="text-xs bg-red-900/60 hover:bg-red-800 text-red-200 border border-red-500/50 px-3 py-1.5 rounded-xl font-semibold transition">
+                    &larr; Ana Menü
+                </button>
+            </div>
+
+            <div id="minesSetupPanel" class="bg-black/50 p-5 rounded-2xl border border-amber-500/30 max-w-md mx-auto my-4">
+                <h3 class="font-bold text-sm text-amber-300 mb-3 text-center uppercase tracking-wide">⚙️ Oyunu Yapılandır</h3>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-xs text-gray-300 mb-1">Alan Boyutu:</label>
+                        <select id="minesGridSize" onchange="playAudio('click'); updateMinesCountOptions();" class="w-full bg-slate-900 border border-amber-500/40 rounded-xl p-2.5 text-xs text-amber-300 font-bold focus:outline-none">
+                            <option value="3">3 x 3 (9 Kutu)</option>
+                            <option value="4" selected>4 x 4 (16 Kutu)</option>
+                            <option value="5">5 x 5 (25 Kutu)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-300 mb-1">Mayın Sayısı:</label>
+                        <select id="minesCountSelect" onchange="playAudio('click')" class="w-full bg-slate-900 border border-amber-500/40 rounded-xl p-2.5 text-xs text-amber-300 font-bold focus:outline-none"></select>
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-300 mb-1">Bahis Miktarı (TL):</label>
+                        <input type="number" id="minesBetInput" value="300" min="100" step="100" class="w-full bg-slate-900 border border-amber-500/40 rounded-xl p-2.5 text-xs text-amber-300 font-bold text-center focus:outline-none">
+                    </div>
+                    <button onclick="startMinesGame()" class="w-full btn-gold py-3 rounded-xl font-bold text-xs uppercase tracking-wide mt-2">
+                        🚀 Oyunu Başlat
+                    </button>
+                </div>
+            </div>
+
+            <div id="minesGameArea" class="hidden">
+                <div class="flex justify-center items-center my-4 min-h-[240px]">
+                    <div id="minesGrid" class="grid gap-2 justify-center max-w-full"></div>
+                </div>
+                <div id="minesStatus" class="text-center font-bold text-xs md:text-sm text-amber-300 mb-4 min-h-[20px]">
+                    Kutuları seç ve mayınlardan kaç!
+                </div>
+                <div class="flex justify-center">
+                    <button id="minesCashoutBtn" onclick="cashoutMines()" class="bg-emerald-700 hover:bg-emerald-600 text-white px-8 py-3 rounded-xl font-bold text-xs shadow-lg transition">
+                        💰 Parayı Çek (<span id="minesCashoutVal">0</span> TL)
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 5. UÇAK (AVIATOR / CRASH) EKRANI[cite: 1] -->
+        <div id="planeScreen" class="w-full casino-panel rounded-3xl p-5 md:p-8 hidden">
+            <div class="flex items-center justify-between mb-3 border-b border-amber-500/30 pb-3">
+                <div class="flex items-center gap-3">
+                    <h2 class="cinzel-font text-lg md:text-xl font-bold gold-text">✈️ AVIATOR UÇAK (CRASH)</h2>
+                    <button onclick="playAudio('click'); openManualTutorial('plane');" class="text-xs bg-amber-500/20 hover:bg-amber-500/40 text-amber-300 border border-amber-500/40 px-2.5 py-1 rounded-lg font-semibold transition">
+                        📖 Nasıl Oynanır?
+                    </button>
+                </div>
+                <button onclick="playAudio('click'); goToMainMenu();" class="text-xs bg-red-900/60 hover:bg-red-800 text-red-200 border border-red-500/50 px-3 py-1.5 rounded-xl font-semibold transition">
+                    &larr; Ana Menü
+                </button>
+            </div>
+
+            <div class="relative w-full h-60 bg-black/80 border border-amber-500/40 rounded-2xl overflow-hidden my-3">
+                <canvas id="planeCanvas" class="w-full h-full block"></canvas>
+                <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                    <div id="planeMultiplierText" class="text-4xl md:text-5xl font-black text-amber-400 drop-shadow">1.00x</div>
+                    <div id="planeSubText" class="text-xs text-gray-300 mt-1">Uçak Kalkışa Hazır</div>
+                </div>
+            </div>
+
+            <div id="planeMessage" class="text-center font-bold text-xs text-amber-300 mb-3 min-h-[20px]">
+                Bahsini belirle ve kalkışı başlat!
+            </div>
+
+            <div class="flex flex-col sm:flex-row items-center justify-between gap-3">
+                <div class="flex items-center gap-2 w-full sm:w-auto">
+                    <span class="text-xs text-amber-200 font-semibold">Bahis (TL):</span>
+                    <input type="number" id="planeBetInput" value="500" min="100" step="100" class="bg-black/60 border border-amber-500/40 rounded-xl px-3 py-2 text-xs w-28 text-center text-amber-300 font-bold focus:outline-none">
+                </div>
+                <button id="planeStartBtn" onclick="startPlaneFlight()" class="btn-gold px-8 py-2.5 rounded-xl text-xs font-bold w-full sm:w-auto">
+                    🛫 Uçağı Kaldır
+                </button>
+                <button id="planeCashoutBtn" onclick="cashoutPlane()" class="bg-emerald-700 hover:bg-emerald-600 text-white px-8 py-2.5 rounded-xl text-xs font-bold w-full sm:w-auto shadow transition hidden">
+                    💰 Parayı Çek
+                </button>
+            </div>
+        </div>
+
+        <!-- 6. ZEUS'UN GAZABI EKRANI[cite: 1] -->
+        <div id="zeusScreen" class="w-full casino-panel rounded-3xl p-5 md:p-8 hidden">
+            <div class="flex items-center justify-between mb-3 border-b border-amber-500/30 pb-3">
+                <div class="flex items-center gap-3">
+                    <h2 class="cinzel-font text-lg md:text-xl font-bold gold-text">⚡ ZEUS'UN GAZABI</h2>
+                    <button onclick="playAudio('click'); openManualTutorial('zeus');" class="text-xs bg-amber-500/20 hover:bg-amber-500/40 text-amber-300 border border-amber-500/40 px-2.5 py-1 rounded-lg font-semibold transition">
+                        📖 Nasıl Oynanır?
+                    </button>
+                </div>
+                <button onclick="playAudio('click'); goToMainMenu();" class="text-xs bg-red-900/60 hover:bg-red-800 text-red-200 border border-red-500/50 px-3 py-1.5 rounded-xl font-semibold transition">
+                    &larr; Ana Menü
+                </button>
+            </div>
+
+            <div class="bg-black/50 border border-amber-500/30 rounded-2xl p-4 my-3 text-center">
+                <div class="flex items-center justify-center gap-3 mb-3">
+                    <div id="zeusAvatar" class="text-4xl transition-transform duration-300">⚡🏛️⚡</div>
+                    <div>
+                        <div class="text-[10px] text-amber-200 uppercase font-bold">Aktif Şimşek Çarpanı</div>
+                        <div id="zeusMultiplierDisplay" class="text-2xl font-black text-amber-400">1x</div>
+                    </div>
+                </div>
+                <div id="zeusGrid" class="grid grid-cols-4 gap-2 max-w-xs mx-auto p-2 bg-slate-950/80 rounded-xl border border-amber-500/20"></div>
+            </div>
+
+            <div id="zeusMessage" class="text-center font-bold text-xs md:text-sm text-amber-300 mb-3 min-h-[20px]">
+                Çevir butonuna bas. Kazanma oranı dengelenmiştir (%35 şans).
+            </div>
+
+            <div class="flex flex-col sm:flex-row items-center justify-center gap-3">
+                <div class="flex items-center gap-2">
+                    <span class="text-xs text-amber-200 font-semibold">Bahis (TL):</span>
+                    <input type="number" id="zeusBetInput" value="500" min="100" step="100" class="bg-black/60 border border-amber-500/40 rounded-xl px-3 py-2 text-xs w-28 text-center text-amber-300 font-bold focus:outline-none">
+                </div>
+                <button id="zeusStrikeBtn" onclick="strikeZeusSlot()" class="btn-gold px-8 py-2.5 rounded-xl text-xs font-bold w-full sm:w-auto">
+                    ⚡ ÇEVİR & ŞİMŞEK SİNYALİ
+                </button>
+            </div>
+        </div>
+
+        <!-- 7. ZAR DÜELLOSU EKRANI (Yapay Zeka / Arkadaşa Karşı Seçenekli) -->
+        <div id="diceScreen" class="w-full casino-panel rounded-3xl p-5 md:p-8 hidden">
+            <div class="flex items-center justify-between mb-3 border-b border-amber-500/30 pb-3">
+                <div class="flex items-center gap-3">
+                    <h2 class="cinzel-font text-lg md:text-xl font-bold gold-text">🎲 ZAR DÜELLOSU</h2>
+                    <button onclick="playAudio('click'); openManualTutorial('dice');" class="text-xs bg-amber-500/20 hover:bg-amber-500/40 text-amber-300 border border-amber-500/40 px-2.5 py-1 rounded-lg font-semibold transition">
+                        📖 Nasıl Oynanır?
+                    </button>
+                </div>
+                <button onclick="playAudio('click'); goToMainMenu();" class="text-xs bg-red-900/60 hover:bg-red-800 text-red-200 border border-red-500/50 px-3 py-1.5 rounded-xl font-semibold transition">
+                    &larr; Ana Menü
+                </button>
+            </div>
+
+            <!-- Zar Mod Seçimi -->
+            <div class="flex justify-center gap-3 mb-4 p-2 bg-black/40 rounded-2xl border border-amber-500/20">
+                <button id="diceModeAiBtn" onclick="playAudio('click'); setDiceMode('ai');" class="px-4 py-2 rounded-xl text-xs font-bold transition bg-amber-500 text-black">
+                    🤖 Yapay Zekaya Karşı
+                </button>
+                <button id="diceModeLocalBtn" onclick="playAudio('click'); setDiceMode('local');" class="px-4 py-2 rounded-xl text-xs font-bold transition bg-gray-800 text-gray-300 hover:bg-gray-700">
+                    👥 Aynı Cihazda Arkadaşına Karşı
+                </button>
+            </div>
+
+            <div class="bg-black/50 border border-amber-500/30 rounded-2xl p-6 my-4 text-center">
+                <div class="grid grid-cols-2 gap-6 items-center">
+                    <div class="bg-slate-900/80 p-4 rounded-xl border border-amber-500/20">
+                        <div id="diceOpponentTitle" class="text-xs text-amber-300 font-bold mb-2">🤖 Yapay Zeka</div>
+                        <div id="diceAiBox" class="text-4xl my-2">🎲 🎲</div>
+                        <div class="text-sm font-bold text-gray-300">Toplam: <span id="diceAiScore" class="text-amber-400 text-lg">-</span></div>
+                    </div>
+                    <div class="bg-slate-900/80 p-4 rounded-xl border border-amber-500/20">
+                        <div id="dicePlayerTitle" class="text-xs text-amber-300 font-bold mb-2">👤 Sen (Oyuncu 1)</div>
+                        <div id="dicePlayerBox" class="text-4xl my-2">🎲 🎲</div>
+                        <div class="text-sm font-bold text-gray-300">Toplam: <span id="dicePlayerScore" class="text-emerald-400 text-lg">-</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="diceMessage" class="text-center font-bold text-xs md:text-sm text-amber-300 mb-4 min-h-[20px]">
+                Bahisini belirle ve Zarları At butonuna bas!
+            </div>
+
+            <div class="flex flex-col sm:flex-row items-center justify-between gap-3">
+                <div class="flex items-center gap-2 w-full sm:w-auto">
+                    <span class="text-xs text-amber-200 font-semibold">Bahis (TL):</span>
+                    <input type="number" id="diceBetInput" value="300" min="100" step="100" class="bg-black/60 border border-amber-500/40 rounded-xl px-3 py-2 text-xs w-28 text-center text-amber-300 font-bold focus:outline-none">
+                </div>
+                <button id="diceRollBtn" onclick="playDiceDuel()" class="btn-gold px-8 py-2.5 rounded-xl text-xs font-bold w-full sm:w-auto">
+                    🎲 ZARLARI AT
+                </button>
+            </div>
+        </div>
+
+        <!-- 8. RULET TEK SAYI EKRANI[cite: 1] -->
+        <div id="rouletteScreen" class="w-full casino-panel rounded-3xl p-5 md:p-8 hidden">
+            <div class="flex items-center justify-between mb-3 border-b border-amber-500/30 pb-3">
+                <div class="flex items-center gap-3">
+                    <h2 class="cinzel-font text-lg md:text-xl font-bold gold-text">🎯 RULET TEK SAYI (35x)</h2>
+                    <button onclick="playAudio('click'); openManualTutorial('roulette');" class="text-xs bg-amber-500/20 hover:bg-amber-500/40 text-amber-300 border border-amber-500/40 px-2.5 py-1 rounded-lg font-semibold transition">
+                        📖 Nasıl Oynanır?
+                    </button>
+                </div>
+                <button onclick="playAudio('click'); goToMainMenu();" class="text-xs bg-red-900/60 hover:bg-red-800 text-red-200 border border-red-500/50 px-3 py-1.5 rounded-xl font-semibold transition">
+                    &larr; Ana Menü
+                </button>
+            </div>
+
+            <div class="bg-black/60 border border-amber-500/30 rounded-2xl p-5 my-4 text-center">
+                <div class="text-5xl font-black text-amber-400 my-3 tracking-widest bg-slate-950 py-4 rounded-xl border border-amber-500/40 shadow-inner" id="rouletteResultDisplay">
+                    ?
+                </div>
+                <p class="text-xs text-gray-300 mb-4">0 ile 36 arasında (dahil) şanslı bir sayı seçin:</p>
+                
+                <div class="flex flex-wrap justify-center gap-1.5 max-h-36 overflow-y-auto p-2 bg-slate-900/60 rounded-xl mb-4" id="rouletteNumberGrid"></div>
+
+                <div class="text-xs text-amber-300 font-semibold">
+                    Seçilen Sayı: <span id="selectedRouletteNumber" class="text-white font-bold text-sm bg-amber-600 px-3 py-0.5 rounded">Seçilmedi</span>
+                </div>
+            </div>
+
+            <div id="rouletteMessage" class="text-center font-bold text-xs md:text-sm text-amber-300 mb-4 min-h-[20px]">
+                Bir sayı seç, bahsini belirle ve Çarkı Çevir!
+            </div>
+
+            <div class="flex flex-col sm:flex-row items-center justify-center gap-3">
+                <div class="flex items-center gap-2">
+                    <span class="text-xs text-amber-200 font-semibold">Bahis (TL):</span>
+                    <input type="number" id="rouletteBetInput" value="200" min="100" step="100" class="bg-black/60 border border-amber-500/40 rounded-xl px-3 py-2 text-xs w-28 text-center text-amber-300 font-bold focus:outline-none">
+                </div>
+                <button id="rouletteSpinBtn" onclick="spinRoulette()" class="btn-gold px-8 py-2.5 rounded-xl text-xs font-bold w-full sm:w-auto">
+                    🎯 RULET ÇARKINI ÇEVİR
+                </button>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- ALT BİLGİ[cite: 1] -->
+    <footer class="w-full max-w-4xl text-center text-[11px] text-gray-400 my-4 border-t border-amber-500/20 pt-3">
+        © 2026 Casino Simülasyonu (Okul Ödevi Projesi). Geliştirici: <span class="text-amber-400 font-semibold">Umutcan Evişmek</span>[cite: 1]
+    </footer>
+
+    <!-- JAVASCRIPT KODLARI[cite: 1] -->
+    <script>
+        /* ==========================================================================
+           0. WEB AUDIO API SES SİSTEMİ[cite: 1]
+           ========================================================================== */
+        let audioCtx = null;
+
+        function initAudioOnInteraction() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        function playAudio(type) {
+            if (!audioCtx) return;
+            const now = audioCtx.currentTime;
+
+            if (type === 'click') {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(600, now);
+                osc.frequency.exponentialRampToValueAtTime(200, now + 0.05);
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.linearRampToValueAtTime(0.01, now + 0.05);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start(now);
+                osc.stop(now + 0.05);
+            } 
+            else if (type === 'card') {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(300, now);
+                osc.frequency.linearRampToValueAtTime(500, now + 0.08);
+                gain.gain.setValueAtTime(0.25, now);
+                gain.gain.linearRampToValueAtTime(0.01, now + 0.08);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start(now);
+                osc.stop(now + 0.08);
+            }
+            else if (type === 'win') {
+                [400, 520, 650, 800].forEach((freq, idx) => {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(freq, now + idx * 0.08);
+                    gain.gain.setValueAtTime(0.2, now + idx * 0.08);
+                    gain.gain.linearRampToValueAtTime(0.01, now + idx * 0.08 + 0.15);
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start(now + idx * 0.08);
+                    osc.stop(now + idx * 0.08 + 0.15);
+                });
+            }
+            else if (type === 'lose') {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(220, now);
+                osc.frequency.linearRampToValueAtTime(90, now + 0.3);
+                gain.gain.setValueAtTime(0.3, now);
+                gain.gain.linearRampToValueAtTime(0.01, now + 0.3);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start(now);
+                osc.stop(now + 0.3);
+            }
+            else if (type === 'spin') {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(150, now);
+                gain.gain.setValueAtTime(0.08, now);
+                gain.gain.linearRampToValueAtTime(0.01, now + 0.04);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start(now);
+                osc.stop(now + 0.04);
+            }
+            else if (type === 'thunder') {
+                const bufferSize = audioCtx.sampleRate * 0.4;
+                const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+                const output = buffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) {
+                    output[i] = Math.random() * 2 - 1;
+                }
+                const whiteNoise = audioCtx.createBufferSource();
+                whiteNoise.buffer = buffer;
+                const filter = audioCtx.createBiquadFilter();
+                filter.type = 'lowpass';
+                filter.frequency.setValueAtTime(800, now);
+                filter.frequency.linearRampToValueAtTime(100, now + 0.4);
+                const gain = audioCtx.createGain();
+                gain.gain.setValueAtTime(0.4, now);
+                gain.gain.linearRampToValueAtTime(0.01, now + 0.4);
+                whiteNoise.connect(filter);
+                filter.connect(gain);
+                gain.connect(audioCtx.destination);
+                whiteNoise.start(now);
+            }
+            else if (type === 'plane') {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(180, now);
+                osc.frequency.linearRampToValueAtTime(320, now + 0.1);
+                gain.gain.setValueAtTime(0.08, now);
+                gain.gain.linearRampToValueAtTime(0.01, now + 0.1);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start(now);
+                osc.stop(now + 0.1);
+            }
+        }
+
+
+        /* ==========================================================================
+           0.1 EĞİTİM / NASIL OYNANIR SİSTEMİ[cite: 1]
+           ========================================================================== */
+        const tutorialsData = {
+            blackjack: {
+                icon: "♠️",
+                title: "Casino 21 (Blackjack) Nasıl Oynanır?",
+                html: `
+                    <p><b>Amaç:</b> Kartların toplam değerini 21'i geçmeden 21'e en yakın tutmak ve rakibi yenmektir.</p>
+                    <ul class="list-disc pl-4 space-y-1 mt-2">
+                        <li><b>Değerler:</b> As (A) 1 veya 11 değerindedir. Resimli kartlar (J, Q, K) 10 değerindedir.</li>
+                        <li><b>Kart Çek (Hit):</b> Yeni kart alırsınız. 21'i geçerseniz yanarsınız.</li>
+                        <li><b>Dur (Stand):</b> Kart çekmeyi bırakıp sırayı rakibe devredersiniz.</li>
+                    </ul>
+                `
+            },
+            slot: {
+                icon: "🎰",
+                title: "Klasik Slot Makinesi Nasıl Oynanır?",
+                html: `
+                    <p><b>Amaç:</b> Çarkları çevirerek aynı sembolleri yan yana getirmektir.</p>
+                    <ul class="list-disc pl-4 space-y-1 mt-2">
+                        <li><b>Bahis:</b> Miktarı girin ve Çarkı Çevir butonuna basın.</li>
+                        <li><b>Katsayılar:</b> 3 adet Elmas/Altın 15x Jackpot kazandırır. Diğer 3'lü eşleşmeler 8x kazanç sağlar.</li>
+                    </ul>
+                `
+            },
+            mines: {
+                icon: "💣",
+                title: "Mayın Tarlası Nasıl Oynanır?",
+                html: `
+                    <p><b>Amaç:</b> Mayınlara basmadan güvenli kutuları açmak ve parayı çekmektir.</p>
+                    <ul class="list-disc pl-4 space-y-1 mt-2">
+                        <li><b>Kurulum:</b> Alan boyutu ve mayın sayısını seçersiniz.</li>
+                        <li><b>Kutu Seçimi:</b> 💎 buldukça çarpan artar. İstediğiniz an parayı çekebilirsiniz.</li>
+                    </ul>
+                `
+            },
+            plane: {
+                icon: "✈️",
+                title: "Aviator Uçak (Crash) Nasıl Oynanır?",
+                html: `
+                    <p><b>Amaç:</b> Yükselen uçağın çarpanı artarken, uçak patlamadan önce parayı çekmektir.</p>
+                    <ul class="list-disc pl-4 space-y-1 mt-2">
+                        <li><b>Parayı Çek:</b> Uçak kaybolmadan önce butona basmalısınız, aksi halde bahis yanar.</li>
+                    </ul>
+                `
+            },
+            zeus: {
+                icon: "⚡",
+                title: "Zeus'un Gazabı Nasıl Oynanır?",
+                html: `
+                    <p><b>Amaç:</b> 4x4 ızgarada en az 5 adet aynı sembolü eşleştirmektir.</p>
+                    <ul class="list-disc pl-4 space-y-1 mt-2">
+                        <li><b>Şimşek:</b> Zeus rastgele şimşek çaktırarak kazancınızı 25x'e kadar katlayabilir!</li>
+                    </ul>
+                `
+            },
+            dice: {
+                icon: "🎲",
+                title: "Zar Düellosu Nasıl Oynanır?",
+                html: `
+                    <p><b>Amaç:</b> Yapay zekaya veya aynı cihazdaki arkadaşına karşı çift zar atarak daha yüksek toplama ulaşmaktır.</p>
+                    <ul class="list-disc pl-4 space-y-1 mt-2">
+                        <li><b>Modlar:</b> İstersen yapay zekaya karşı tek başına, istersen <b>Aynı Cihazda Arkadaşına Karşı</b> 2 oyunculu modda kapışabilirsin.</li>
+                        <li><b>Kazanç:</b> Yüksek skoru alan taraf bahsin 2 katını kazanır.</li>
+                    </ul>
+                `
+            },
+            roulette: {
+                icon: "🎯",
+                title: "Rulet Tek Sayı Nasıl Oynanır?",
+                html: `
+                    <p><b>Amaç:</b> 0 ile 36 arasında tek bir şanslı sayı seçip çarkın o sayı üzerinde durmasını beklemektir.</p>
+                    <ul class="list-disc pl-4 space-y-1 mt-2">
+                        <li><b>Kazanç:</b> Doğru sayıyı bilirseniz yatırdığınız tutarın <b>35 katını</b> kazanırsınız!</li>
+                    </ul>
+                `
+            }
+        };
+
+        function openGameWithTutorial(screenId) {
+            let gameKey = '';
+            if (screenId === 'blackjackScreen') gameKey = 'blackjack';
+            else if (screenId === 'slotScreen') gameKey = 'slot';
+            else if (screenId === 'minesScreen') gameKey = 'mines';
+            else if (screenId === 'planeScreen') gameKey = 'plane';
+            else if (screenId === 'zeusScreen') gameKey = 'zeus';
+            else if (screenId === 'diceScreen') gameKey = 'dice';
+            else if (screenId === 'rouletteScreen') gameKey = 'roulette';
+
+            if (localStorage.getItem('skip_tutorial_' + gameKey) === 'true') {
+                showScreen(screenId);
+            } else {
+                window.pendingScreenId = screenId;
+                window.pendingGameKey = gameKey;
+                showTutorialModal(gameKey);
+            }
+        }
+
+        function openManualTutorial(gameKey) {
+            playAudio('click');
+            window.pendingScreenId = null; 
+            window.pendingGameKey = gameKey;
+            showTutorialModal(gameKey);
+        }
+
+        function showTutorialModal(gameKey) {
+            const data = tutorialsData[gameKey];
+            if (!data) return;
+
+            document.getElementById('tutorialIcon').textContent = data.icon;
+            document.getElementById('tutorialTitle').textContent = data.title;
+            document.getElementById('tutorialContent').innerHTML = data.html;
+            document.getElementById('dontShowAgainCheck').checked = (localStorage.getItem('skip_tutorial_' + gameKey) === 'true');
+            
+            document.getElementById('tutorialModal').classList.remove('hidden');
+        }
+
+        function closeTutorialModal() {
+            const gameKey = window.pendingGameKey;
+            const dontShow = document.getElementById('dontShowAgainCheck').checked;
+
+            if (gameKey) {
+                if (dontShow) {
+                    localStorage.setItem('skip_tutorial_' + gameKey, 'true');
+                } else {
+                    localStorage.removeItem('skip_tutorial_' + gameKey);
+                }
+            }
+
+            document.getElementById('tutorialModal').classList.add('hidden');
+
+            if (window.pendingScreenId) {
+                showScreen(window.pendingScreenId);
+                window.pendingScreenId = null;
+            }
+        }
+
+
+        /* ==========================================================================
+           1. GENEL BAKİYE & NAVİGASYON[cite: 1]
+           ========================================================================== */
+        let balance = 10000;
+
+        function updateBalanceDisplay() {
+            document.getElementById('balanceDisplay').textContent = balance.toLocaleString('tr-TR') + ' TL';
+        }
+
+        function openDepositModal() {
+            document.getElementById('depositModal').classList.remove('hidden');
+        }
+
+        function closeDepositModal() {
+            document.getElementById('depositModal').classList.add('hidden');
+        }
+
+        function addCash(amount) {
+            playAudio('win');
+            balance += amount;
+            updateBalanceDisplay();
+            closeDepositModal();
+        }
+
+        function addCustomCash() {
+            const input = parseInt(document.getElementById('customDepositInput').value);
+            if (!isNaN(input) && input > 0) {
+                playAudio('win');
+                balance += input;
+                updateBalanceDisplay();
+                document.getElementById('customDepositInput').value = '';
+                closeDepositModal();
+            } else {
+                alert('Lütfen geçerli bir bakiye miktarı girin.');
+            }
+        }
+
+        function showScreen(screenId) {
+            const screens = ['mainMenuScreen', 'blackjackScreen', 'slotScreen', 'minesScreen', 'planeScreen', 'zeusScreen', 'diceScreen', 'rouletteScreen'];
+            screens.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.classList.add('hidden');
+            });
+            const target = document.getElementById(screenId);
+            if (target) target.classList.remove('hidden');
+
+            if (screenId === 'planeScreen') {
+                setTimeout(resizeCanvas, 50);
+            } else if (screenId === 'minesScreen') {
+                resetMinesToSetup();
+            } else if (screenId === 'zeusScreen') {
+                initZeusGrid();
+            } else if (screenId === 'rouletteScreen') {
+                initRouletteGrid();
+            }
+        }
+
+        function goToMainMenu() {
+            showScreen('mainMenuScreen');
+        }
+
+
+        /* ==========================================================================
+           2. BLACKJACK (21) LOGIC[cite: 1]
+           ========================================================================== */
+        let bjMode = 'ai'; 
+        let bjTurn = 1; 
+        let bjCurrentBet = 0;
+        let bjPlayerHand = [];
+        let bjOpponentHand = [];
+        let bjGameInProgress = false;
+
+        const suits = ['♠', '♥', '♦', '♣'];
+        const values = [
+            { name: '2', val: 2 }, { name: '3', val: 3 }, { name: '4', val: 4 },
+            { name: '5', val: 5 }, { name: '6', val: 6 }, { name: '7', val: 7 },
+            { name: '8', val: 8 }, { name: '9', val: 9 }, { name: '10', val: 10 },
+            { name: 'J', val: 10 }, { name: 'Q', val: 10 }, { name: 'K', val: 10 }, { name: 'A', val: 11 }
+        ];
+
+        function setBjMode(mode) {
+            if (bjGameInProgress) return;
+            bjMode = mode;
+            const aiBtn = document.getElementById('bjModeAiBtn');
+            const localBtn = document.getElementById('bjModeLocalBtn');
+            
+            if (mode === 'ai') {
+                aiBtn.className = "px-4 py-2 rounded-xl text-xs font-bold transition bg-amber-500 text-black";
+                localBtn.className = "px-4 py-2 rounded-xl text-xs font-bold transition bg-gray-800 text-gray-300 hover:bg-gray-700";
+                document.getElementById('bjOpponentName').textContent = "🤖 Yapay Zeka";
+                document.getElementById('bjPlayerName').textContent = "👤 Sen";
+            } else {
+                localBtn.className = "px-4 py-2 rounded-xl text-xs font-bold transition bg-amber-500 text-black";
+                aiBtn.className = "px-4 py-2 rounded-xl text-xs font-bold transition bg-gray-800 text-gray-300 hover:bg-gray-700";
+                document.getElementById('bjOpponentName').textContent = "👤 Oyuncu 2";
+                document.getElementById('bjPlayerName').textContent = "👤 Oyuncu 1";
+            }
+            resetBlackjackTable();
+        }
+
+        function drawCard() {
+            playAudio('card');
+            const suit = suits[Math.floor(Math.random() * suits.length)];
+            const valObj = values[Math.floor(Math.random() * values.length)];
+            return { suit, ...valObj };
+        }
+
+        function calculateScore(hand) {
+            let score = 0;
+            let aces = 0;
+            hand.forEach(c => {
+                score += c.val;
+                if (c.name === 'A') aces++;
+            });
+            while (score > 21 && aces > 0) {
+                score -= 10;
+                aces--;
+            }
+            return score;
+        }
+
+        function createCardUI(card) {
+            const isRed = card.suit === '♥' || card.suit === '♦';
+            const div = document.createElement('div');
+            div.className = `card-anim w-11 h-16 bg-white rounded p-1 flex flex-col justify-between font-bold text-xs shadow border ${isRed ? 'text-red-600 border-red-300' : 'text-slate-900 border-gray-300'}`;
+            div.innerHTML = `
+                <div class="text-[9px] leading-none">${card.name}</div>
+                <div class="text-center text-sm">${card.suit}</div>
+                <div class="text-[9px] leading-none text-right rotate-180">${card.name}</div>
+            `;
+            return div;
+        }
+
+        function startBlackjackRound() {
+            playAudio('click');
+            const betInput = parseInt(document.getElementById('bjBetInput').value);
+            if (isNaN(betInput) || betInput <= 0) { alert('Geçerli bir bahis girin!'); return; }
+            if (betInput > balance) { alert('Bakiye yetersiz!'); return; }
+
+            bjCurrentBet = betInput;
+            balance -= bjCurrentBet;
+            updateBalanceDisplay();
+
+            bjPlayerHand = [drawCard(), drawCard()];
+            bjOpponentHand = [drawCard()];
+            bjGameInProgress = true;
+            bjTurn = 1;
+
+            document.getElementById('bjModeAiBtn').disabled = true;
+            document.getElementById('bjModeLocalBtn').disabled = true;
+            document.getElementById('bjModeAiBtn').classList.add('opacity-50');
+            document.getElementById('bjModeLocalBtn').classList.add('opacity-50');
+
+            document.getElementById('bjBetControls').classList.add('hidden');
+            document.getElementById('bjGameButtons').classList.remove('hidden');
+            document.getElementById('bjRestartBtn').classList.add('hidden');
+
+            renderBlackjackHands();
+            
+            if (bjMode === 'ai') {
+                document.getElementById('bjMessage').textContent = 'Kart çek (Hit) veya Dur (Stand) kararı ver!';
+            } else {
+                document.getElementById('bjMessage').textContent = 'Sıra Oyuncu 1\'de! Hamleni yap.';
+            }
+        }
+
+        function renderBlackjackHands() {
+            const pCards = document.getElementById('bjPlayerCards');
+            const oCards = document.getElementById('bjOpponentCards');
+            pCards.innerHTML = '';
+            oCards.innerHTML = '';
+
+            bjPlayerHand.forEach(c => pCards.appendChild(createCardUI(c)));
+            bjOpponentHand.forEach(c => oCards.appendChild(createCardUI(c)));
+
+            document.getElementById('bjPlayerScore').textContent = calculateScore(bjPlayerHand);
+            document.getElementById('bjOpponentScore').textContent = calculateScore(bjOpponentHand);
+        }
+
+        function bjHit() {
+            if (!bjGameInProgress) return;
+
+            if (bjMode === 'ai' || bjTurn === 1) {
+                bjPlayerHand.push(drawCard());
+                renderBlackjackHands();
+                if (calculateScore(bjPlayerHand) > 21) {
+                    if (bjMode === 'ai') {
+                        endBlackjackGame(`21'i geçtin! Kaybettin (-${bjCurrentBet} TL)`, "text-red-400", false);
+                    } else {
+                        document.getElementById('bjMessage').textContent = "Oyuncu 1 21'i geçti! Sıra Oyuncu 2'de.";
+                        bjTurn = 2;
+                    }
+                }
+            } else {
+                bjOpponentHand.push(drawCard());
+                renderBlackjackHands();
+                if (calculateScore(bjOpponentHand) > 21) {
+                    endBlackjackGame("Oyuncu 2 21'i geçti! Oyuncu 1 Kazandı!", "text-emerald-400", true);
+                }
+            }
+        }
+
+        function bjStand() {
+            playAudio('click');
+            if (!bjGameInProgress) return;
+
+            if (bjMode === 'ai') {
+                document.getElementById('bjGameButtons').classList.add('hidden');
+                document.getElementById('bjMessage').textContent = "Yapay Zeka hamlesini yapıyor...";
+
+                let aiTimer = setInterval(() => {
+                    let oScore = calculateScore(bjOpponentHand);
+                    let pScore = calculateScore(bjPlayerHand);
+                    if (oScore < 17 && oScore < pScore) {
+                        bjOpponentHand.push(drawCard());
+                        renderBlackjackHands();
+                    } else {
+                        clearInterval(aiTimer);
+                        determineBjAiWinner();
+                    }
+                }, 500);
+            } else {
+                if (bjTurn === 1) {
+                    bjTurn = 2;
+                    document.getElementById('bjMessage').textContent = "Sıra Oyuncu 2'de! Kart çek veya dur.";
+                } else {
+                    determineBjLocalWinner();
+                }
+            }
+        }
+
+        function determineBjAiWinner() {
+            let pScore = calculateScore(bjPlayerHand);
+            let oScore = calculateScore(bjOpponentHand);
+            let winAmt = bjCurrentBet * 2;
+
+            if (oScore > 21) {
+                balance += winAmt;
+                endBlackjackGame(`Yapay Zeka 21'i geçti! Kazandın (+${winAmt} TL) 🏆`, "text-emerald-400", true);
+            } else if (pScore > oScore) {
+                balance += winAmt;
+                endBlackjackGame(`Tebrikler! Kazandın (+${winAmt} TL) 🏆`, "text-emerald-400", true);
+            } else if (pScore < oScore) {
+                endBlackjackGame(`Yapay Zeka kazandı (-${bjCurrentBet} TL)`, "text-red-400", false);
+            } else {
+                balance += bjCurrentBet;
+                endBlackjackGame(`Berabere! Bahis iade edildi. 🤝`, "text-amber-300", false);
+            }
+            updateBalanceDisplay();
+        }
+
+        function determineBjLocalWinner() {
+            let p1 = calculateScore(bjPlayerHand);
+            let p2 = calculateScore(bjOpponentHand);
+
+            if (p1 > 21 && p2 > 21) endBlackjackGame("İkiniz de yandınız! Kazanan yok.", "text-red-400", false);
+            else if (p1 > 21) endBlackjackGame("Oyuncu 2 Kazandı! 🏆", "text-emerald-400", true);
+            else if (p2 > 21) endBlackjackGame("Oyuncu 1 Kazandı! 🏆", "text-emerald-400", true);
+            else if (p1 > p2) endBlackjackGame(`Oyuncu 1 Kazandı! (${p1} vs ${p2}) 🏆`, "text-emerald-400", true);
+            else if (p2 > p1) endBlackjackGame(`Oyuncu 2 Kazandı! (${p2} vs ${p1}) 🏆`, "text-emerald-400", true);
+            else endBlackjackGame(`Berabere! (${p1}) 🤝`, "text-amber-300", false);
+        }
+
+        function endBlackjackGame(msg, colorClass, isWin) {
+            bjGameInProgress = false;
+            if (isWin) playAudio('win'); else playAudio('lose');
+            document.getElementById('bjMessage').textContent = msg;
+            document.getElementById('bjGameButtons').classList.add('hidden');
+            document.getElementById('bjRestartBtn').classList.remove('hidden');
+
+            document.getElementById('bjModeAiBtn').disabled = false;
+            document.getElementById('bjModeLocalBtn').disabled = false;
+            document.getElementById('bjModeAiBtn').classList.remove('opacity-50');
+            document.getElementById('bjModeLocalBtn').classList.remove('opacity-50');
+        }
+
+        function resetBlackjackTable() {
+            document.getElementById('bjPlayerCards').innerHTML = '';
+            document.getElementById('bjOpponentCards').innerHTML = '';
+            document.getElementById('bjPlayerScore').textContent = '0';
+            document.getElementById('bjOpponentScore').textContent = '0';
+            document.getElementById('bjBetControls').classList.remove('hidden');
+            document.getElementById('bjGameButtons').classList.add('hidden');
+            document.getElementById('bjRestartBtn').classList.add('hidden');
+            document.getElementById('bjMessage').textContent = 'Bahisini belirle ve Oyun Başlat butonuna bas.';
+        }
+
+
+        /* ==========================================================================
+           3. DİKEY KAYAN GERÇEKÇİ SLOT MAKİNESİ LOGIC[cite: 1]
+           ========================================================================== */
+        const slotSymbolsList = ['💎', '🪙', '👑', '🍒', '🍋', '7️⃣'];
+
+        function spinSlotMachine() {
+            playAudio('click');
+            const betInput = parseInt(document.getElementById('slotBetInput').value);
+            if (isNaN(betInput) || betInput <= 0) { alert('Geçerli bir bahis girin!'); return; }
+            if (betInput > balance) { alert('Bakiye yetersiz!'); return; }
+
+            balance -= betInput;
+            updateBalanceDisplay();
+
+            const spinBtn = document.getElementById('slotSpinBtn');
+            spinBtn.disabled = true;
+
+            const strip1 = document.getElementById('strip1');
+            const strip2 = document.getElementById('strip2');
+            const strip3 = document.getElementById('strip3');
+
+            strip1.classList.add('rolling');
+            strip2.classList.add('rolling');
+            strip3.classList.add('rolling');
+
+            let spinSoundInterval = setInterval(() => playAudio('spin'), 120);
+
+            document.getElementById('slotMessage').textContent = 'Çarklar dönüyor...';
+
+            const res1 = slotSymbolsList[Math.floor(Math.random() * slotSymbolsList.length)];
+            const res2 = slotSymbolsList[Math.floor(Math.random() * slotSymbolsList.length)];
+            const res3 = slotSymbolsList[Math.floor(Math.random() * slotSymbolsList.length)];
+
+            setTimeout(() => {
+                strip1.classList.remove('rolling');
+                strip1.children[0].textContent = res1;
+            }, 600);
+
+            setTimeout(() => {
+                strip2.classList.remove('rolling');
+                strip2.children[0].textContent = res2;
+            }, 900);
+
+            setTimeout(() => {
+                clearInterval(spinSoundInterval);
+                strip3.classList.remove('rolling');
+                strip3.children[0].textContent = res3;
+
+                spinBtn.disabled = false;
+
+                let winAmt = 0;
+                if (res1 === res2 && res2 === res3) {
+                    if (res1 === '💎' || res1 === '🪙') {
+                        winAmt = betInput * 15;
+                        playAudio('win');
+                        document.getElementById('slotMessage').textContent = `💥 SÜPER JACKPOT! 3 Adet ${res1} ile (+${winAmt} TL) KAZANDIN!`;
+                    } else {
+                        winAmt = betInput * 8;
+                        playAudio('win');
+                        document.getElementById('slotMessage').textContent = `🎉 TEBRİKLER! 3 Adet ${res1} ile (+${winAmt} TL) KAZANDIN!`;
+                    }
+                } else if (res1 === res2 || res2 === res3 || res1 === res3) {
+                    winAmt = Math.floor(betInput * 1.5);
+                    playAudio('win');
+                    document.getElementById('slotMessage').textContent = `✨ Çift Yakaladın! (+${winAmt} TL) Kazanç!`;
+                } else {
+                    playAudio('lose');
+                    document.getElementById('slotMessage').textContent = `Kaybettin! Tekrar dene.`;
+                }
+
+                if (winAmt > 0) {
+                    balance += winAmt;
+                    updateBalanceDisplay();
+                }
+            }, 1200);
+        }
+
+
+        /* ==========================================================================
+           4. ÖN AYARLI MAYIN TARLASI LOGIC[cite: 1]
+           ========================================================================== */
+        let minesGridSize = 4;
+        let minesCount = 3;
+        let minesBet = 0;
+        let minesActive = false;
+        let minesArray = [];
+        let revealedSafeCount = 0;
+        let minesMultiplier = 1.0;
+
+        function resetMinesToSetup() {
+            minesActive = false;
+            document.getElementById('minesSetupPanel').classList.remove('hidden');
+            document.getElementById('minesGameArea').classList.add('hidden');
+            updateMinesCountOptions();
+        }
+
+        function updateMinesCountOptions() {
+            const size = parseInt(document.getElementById('minesGridSize').value);
+            const select = document.getElementById('minesCountSelect');
+            select.innerHTML = '';
+            
+            const totalCells = size * size;
+            const options = [
+                Math.floor(totalCells * 0.15) || 1,
+                Math.floor(totalCells * 0.25) || 3,
+                Math.floor(totalCells * 0.40) || 5
+            ];
+
+            options.forEach(opt => {
+                const o = document.createElement('option');
+                o.value = opt;
+                o.textContent = `${opt} Mayın (${opt <= options[0] ? 'Kolay' : opt >= options[2] ? 'Zor' : 'Orta'})`;
+                select.appendChild(o);
+            });
+        }
+
+        function startMinesGame() {
+            playAudio('click');
+            minesGridSize = parseInt(document.getElementById('minesGridSize').value);
+            minesCount = parseInt(document.getElementById('minesCountSelect').value);
+            minesBet = parseInt(document.getElementById('minesBetInput').value);
+
+            if (isNaN(minesBet) || minesBet <= 0) { alert('Geçerli bir bahis girin!'); return; }
+            if (minesBet > balance) { alert('Bakiye yetersiz!'); return; }
+
+            balance -= minesBet;
+            updateBalanceDisplay();
+
+            minesActive = true;
+            revealedSafeCount = 0;
+            minesMultiplier = 1.0;
+            const totalCells = minesGridSize * minesGridSize;
+
+            minesArray = Array(totalCells).fill(false);
+            let placed = 0;
+            while (placed < minesCount) {
+                let idx = Math.floor(Math.random() * totalCells);
+                if (!minesArray[idx]) {
+                    minesArray[idx] = true;
+                    placed++;
+                }
+            }
+
+            const gridContainer = document.getElementById('minesGrid');
+            gridContainer.style.gridTemplateColumns = `repeat(${minesGridSize}, minmax(0, 1fr))`;
+            gridContainer.innerHTML = '';
+
+            for (let i = 0; i < totalCells; i++) {
+                const btn = document.createElement('button');
+                btn.className = "w-11 h-11 bg-slate-800 hover:bg-slate-700 border border-amber-500/30 rounded-xl text-base font-bold flex items-center justify-center transition";
+                btn.textContent = '❓';
+                btn.onclick = () => clickMineCell(i, btn);
+                gridContainer.appendChild(btn);
+            }
+
+            document.getElementById('minesSetupPanel').classList.add('hidden');
+            document.getElementById('minesGameArea').classList.remove('hidden');
+            document.getElementById('minesCashoutVal').textContent = minesBet;
+            document.getElementById('minesStatus').textContent = 'Kutuları seç ve Mayınlardan kaçın!';
+        }
+
+        function clickMineCell(index, btnEl) {
+            if (!minesActive || btnEl.disabled) return;
+
+            if (minesArray[index]) {
+                playAudio('lose');
+                btnEl.textContent = '💣';
+                btnEl.className = "w-11 h-11 bg-red-700 text-white rounded-xl text-base font-bold flex items-center justify-center";
+                endMinesGame(false);
+            } else {
+                playAudio('card');
+                btnEl.disabled = true;
+                btnEl.textContent = '💎';
+                btnEl.className = "w-11 h-11 bg-emerald-800 border border-emerald-500 text-white rounded-xl text-base font-bold flex items-center justify-center";
+                
+                revealedSafeCount++;
+                minesMultiplier += (0.15 + (minesCount * 0.04));
+                let currentCashout = Math.floor(minesBet * minesMultiplier);
+                
+                document.getElementById('minesCashoutVal').textContent = currentCashout.toLocaleString('tr-TR');
+                document.getElementById('minesStatus').textContent = `Çarpan: ${minesMultiplier.toFixed(2)}x | Kazanç: ${currentCashout} TL`;
+
+                const totalCells = minesGridSize * minesGridSize;
+                if (revealedSafeCount === (totalCells - minesCount)) {
+                    cashoutMines();
+                }
+            }
+        }
+
+        function cashoutMines() {
+            if (!minesActive) return;
+            playAudio('win');
+            let winAmt = Math.floor(minesBet * minesMultiplier);
+            balance += winAmt;
+            updateBalanceDisplay();
+            endMinesGame(true, winAmt);
+        }
+
+        function endMinesGame(won, winAmt = 0) {
+            minesActive = false;
+            const gridContainer = document.getElementById('minesGrid');
+            const buttons = gridContainer.querySelectorAll('button');
+
+            buttons.forEach((btn, idx) => {
+                btn.disabled = true;
+                if (minesArray[idx]) {
+                    btn.textContent = '💣';
+                    btn.classList.add('bg-red-900');
+                }
+            });
+
+            if (won) {
+                document.getElementById('minesStatus').textContent = `🎉 TEBRİKLER! Parayı çektin (+${winAmt} TL)`;
+            } else {
+                document.getElementById('minesStatus').textContent = `💥 Mayına bastın! Oyun bitti.`;
+            }
+
+            setTimeout(() => {
+                const resetBtn = document.createElement('button');
+                resetBtn.className = "mt-3 btn-gold px-4 py-2 rounded-xl text-xs font-bold block mx-auto";
+                resetBtn.textContent = "Yeni Oyuna Başla";
+                resetBtn.onclick = () => { playAudio('click'); resetMinesToSetup(); };
+                document.getElementById('minesGameArea').appendChild(resetBtn);
+            }, 500);
+        }
+
+
+        /* ==========================================================================
+           5. AVIATOR UÇAK (CRASH) LOGIC[cite: 1]
+           ========================================================================== */
+        let planeCanvas, planeCtx;
+        let planeActive = false;
+        let planeBet = 0;
+        let planeMultiplier = 1.0;
+        let planeCrashPoint = 1.0;
+        let planeAnimId = null;
+        let planeProgress = 0;
+
+        function resizeCanvas() {
+            planeCanvas = document.getElementById('planeCanvas');
+            if (planeCanvas) {
+                planeCanvas.width = planeCanvas.parentElement.clientWidth;
+                planeCanvas.height = planeCanvas.parentElement.clientHeight;
+            }
+        }
+        window.addEventListener('resize', resizeCanvas);
+
+        function startPlaneFlight() {
+            playAudio('click');
+            planeBet = parseInt(document.getElementById('planeBetInput').value);
+            if (isNaN(planeBet) || planeBet <= 0) { alert('Geçerli bir bahis girin!'); return; }
+            if (planeBet > balance) { alert('Bakiye yetersiz!'); return; }
+
+            balance -= planeBet;
+            updateBalanceDisplay();
+
+            planeActive = true;
+            planeMultiplier = 1.00;
+            planeProgress = 0;
+            planeCrashPoint = (1.05 + Math.random() * 3.8).toFixed(2);
+
+            document.getElementById('planeStartBtn').classList.add('hidden');
+            document.getElementById('planeCashoutBtn').classList.remove('hidden');
+            document.getElementById('planeMessage').textContent = 'Uçak yükseliyor, zamanında çekil!';
+
+            resizeCanvas();
+            animatePlane();
+        }
+
+        function animatePlane() {
+            if (!planeActive) return;
+
+            planeCtx = planeCanvas.getContext('2d');
+            const w = planeCanvas.width;
+            const h = planeCanvas.height;
+
+            planeMultiplier += 0.008;
+            planeProgress += 0.005;
+
+            if (Math.random() < 0.2) playAudio('plane');
+
+            document.getElementById('planeMultiplierText').textContent = planeMultiplier.toFixed(2) + 'x';
+
+            planeCtx.clearRect(0, 0, w, h);
+
+            planeCtx.beginPath();
+            planeCtx.moveTo(0, h);
+            let targetX = w * Math.min(planeProgress, 0.88);
+            let targetY = h - (h * 0.75 * Math.min(planeProgress, 0.88));
+            planeCtx.quadraticCurveTo(targetX / 2, h, targetX, targetY);
+            planeCtx.strokeStyle = '#f39c12';
+            planeCtx.lineWidth = 3;
+            planeCtx.stroke();
+
+            planeCtx.font = '24px serif';
+            planeCtx.fillText('✈️', targetX - 10, targetY + 8);
+
+            if (planeMultiplier >= planeCrashPoint) {
+                crashPlane();
+            } else {
+                planeAnimId = requestAnimationFrame(animatePlane);
+            }
+        }
+
+        function cashoutPlane() {
+            if (!planeActive) return;
+            cancelAnimationFrame(planeAnimId);
+            planeActive = false;
+
+            playAudio('win');
+            let winAmt = Math.floor(planeBet * planeMultiplier);
+            balance += winAmt;
+            updateBalanceDisplay();
+
+            document.getElementById('planeMessage').textContent = `💰 TEBRİKLER! Zamanında çektin (+${winAmt} TL)`;
+            document.getElementById('planeSubText').textContent = 'KAZANDIN!';
+            resetPlaneUI();
+        }
+
+        function crashPlane() {
+            cancelAnimationFrame(planeAnimId);
+            planeActive = false;
+
+            playAudio('lose');
+            document.getElementById('planeMultiplierText').textContent = '💥 DÜŞTÜ!';
+            document.getElementById('planeSubText').textContent = `${planeCrashPoint}x seviyesinde düştü.`;
+            document.getElementById('planeMessage').textContent = 'Uçak düştü! Bahsi kaybettin.';
+            resetPlaneUI();
+        }
+
+        function resetPlaneUI() {
+            document.getElementById('planeStartBtn').classList.remove('hidden');
+            document.getElementById('planeCashoutBtn').classList.add('hidden');
+        }
+
+
+        /* ==========================================================================
+           6. ZEUS'UN GAZABI LOGIC[cite: 1]
+           ========================================================================== */
+        const zeusSymbols = ['⚡', '👑', '🏺', '🏛️', '💍', '🛡️'];
+
+        function initZeusGrid() {
+            const grid = document.getElementById('zeusGrid');
+            grid.innerHTML = '';
+            for (let i = 0; i < 16; i++) {
+                const box = document.createElement('div');
+                box.className = "h-12 bg-slate-900 border border-amber-500/30 rounded-xl flex items-center justify-center text-2xl shadow";
+                box.textContent = zeusSymbols[Math.floor(Math.random() * zeusSymbols.length)];
+                grid.appendChild(box);
+            }
+        }
+
+        function strikeZeusSlot() {
+            playAudio('click');
+            const betInput = parseInt(document.getElementById('zeusBetInput').value);
+            if (isNaN(betInput) || betInput <= 0) { alert('Geçerli bir bahis girin!'); return; }
+            if (betInput > balance) { alert('Bakiye yetersiz!'); return; }
+
+            balance -= betInput;
+            updateBalanceDisplay();
+
+            const btn = document.getElementById('zeusStrikeBtn');
+            btn.disabled = true;
+
+            document.getElementById('zeusMessage').textContent = 'Zeus sembolleri çeviriyor...';
+
+            const grid = document.getElementById('zeusGrid');
+            const boxes = grid.children;
+            let spinCounts = 0;
+
+            let spinInterval = setInterval(() => {
+                playAudio('spin');
+                for (let b of boxes) {
+                    b.textContent = zeusSymbols[Math.floor(Math.random() * zeusSymbols.length)];
+                }
+                spinCounts++;
+                if (spinCounts > 8) {
+                    clearInterval(spinInterval);
+                    finishZeusRound(betInput);
+                }
+            }, 80);
+        }
+
+        function finishZeusRound(betInput) {
+            const btn = document.getElementById('zeusStrikeBtn');
+            const grid = document.getElementById('zeusGrid');
+            const boxes = grid.children;
+
+            const isWinningRound = Math.random() < 0.35;
+            let finalSymbols = [];
+
+            if (isWinningRound) {
+                let targetSym = zeusSymbols[Math.floor(Math.random() * zeusSymbols.length)];
+                let targetCount = Math.floor(Math.random() * 2) + 5;
+                for (let i = 0; i < 16; i++) {
+                    if (i < targetCount) finalSymbols.push(targetSym);
+                    else finalSymbols.push(zeusSymbols[Math.floor(Math.random() * zeusSymbols.length)]);
+                }
+                finalSymbols.sort(() => Math.random() - 0.5);
+            } else {
+                for (let i = 0; i < 16; i++) {
+                    finalSymbols.push(zeusSymbols[i % zeusSymbols.length]);
+                }
+                finalSymbols.sort(() => Math.random() - 0.5);
+            }
+
+            for (let i = 0; i < 16; i++) {
+                boxes[i].textContent = finalSymbols[i];
+            }
+
+            let counts = {};
+            for (let sym of finalSymbols) {
+                counts[sym] = (counts[sym] || 0) + 1;
+            }
+
+            let maxMatch = 0;
+            let matchSym = '';
+            for (let sym in counts) {
+                if (counts[sym] > maxMatch) {
+                    maxMatch = counts[sym];
+                    matchSym = sym;
+                }
+            }
+
+            let hasMultiplier = Math.random() < 0.20;
+            let multiplierVal = 1;
+
+            if (hasMultiplier) {
+                playAudio('thunder');
+                multiplierVal = Math.random() < 0.8 ? Math.floor(Math.random() * 4) + 2 : (Math.random() < 0.8 ? 10 : 25);
+                document.getElementById('zeusAvatar').classList.add('scale-125');
+                setTimeout(() => document.getElementById('zeusAvatar').classList.remove('scale-125'), 400);
+            }
+
+            document.getElementById('zeusMultiplierDisplay').textContent = `${multiplierVal}x`;
+
+            if (maxMatch >= 5) {
+                playAudio('win');
+                let baseMultiplier = maxMatch === 5 ? 1.2 : maxMatch === 6 ? 2.0 : 3.5;
+                let winAmt = Math.floor(betInput * baseMultiplier * multiplierVal);
+                balance += winAmt;
+                updateBalanceDisplay();
+
+                document.getElementById('zeusMessage').textContent = `🎉 ${maxMatch} Adet ${matchSym} Yakaladın! (${multiplierVal}x Çarpan ile +${winAmt} TL)`;
+            } else {
+                playAudio('lose');
+                document.getElementById('zeusMessage').textContent = 'Yeterli eşleşme olmadı (En az 5 aynı sembol gerekir).';
+            }
+
+            btn.disabled = false;
+        }
+
+
+        /* ==========================================================================
+           7. ZAR DÜELLOSU LOGIC (Yapay Zeka veya Arkadaşa Karşı)
+           ========================================================================== */
+        let diceMode = 'ai'; // 'ai' veya 'local'
+        const diceFaces = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
+
+        function setDiceMode(mode) {
+            diceMode = mode;
+            const aiBtn = document.getElementById('diceModeAiBtn');
+            const localBtn = document.getElementById('diceModeLocalBtn');
+
+            if (mode === 'ai') {
+                aiBtn.className = "px-4 py-2 rounded-xl text-xs font-bold transition bg-amber-500 text-black";
+                localBtn.className = "px-4 py-2 rounded-xl text-xs font-bold transition bg-gray-800 text-gray-300 hover:bg-gray-700";
+                document.getElementById('diceOpponentTitle').textContent = "🤖 Yapay Zeka";
+                document.getElementById('dicePlayerTitle').textContent = "👤 Sen (Oyuncu 1)";
+            } else {
+                localBtn.className = "px-4 py-2 rounded-xl text-xs font-bold transition bg-amber-500 text-black";
+                aiBtn.className = "px-4 py-2 rounded-xl text-xs font-bold transition bg-gray-800 text-gray-300 hover:bg-gray-700";
+                document.getElementById('diceOpponentTitle').textContent = "👥 Oyuncu 2 (Arkadaşın)";
+                document.getElementById('dicePlayerTitle').textContent = "👤 Oyuncu 1";
+            }
+            document.getElementById('diceAiBox').textContent = "🎲 🎲";
+            document.getElementById('dicePlayerBox').textContent = "🎲 🎲";
+            document.getElementById('diceAiScore').textContent = "-";
+            document.getElementById('dicePlayerScore').textContent = "-";
+            document.getElementById('diceMessage').textContent = 'Bahisini belirle ve Zarları At butonuna bas!';
+        }
+
+        function playDiceDuel() {
+            playAudio('click');
+            const betInput = parseInt(document.getElementById('diceBetInput').value);
+            if (isNaN(betInput) || betInput <= 0) { alert('Geçerli bir bahis girin!'); return; }
+            if (betInput > balance) { alert('Bakiye yetersiz!'); return; }
+
+            balance -= betInput;
+            updateBalanceDisplay();
+
+            const rollBtn = document.getElementById('diceRollBtn');
+            rollBtn.disabled = true;
+
+            document.getElementById('diceMessage').textContent = 'Zarlar atılıyor...';
+
+            let count = 0;
+            let rollInterval = setInterval(() => {
+                playAudio('spin');
+                let r1 = Math.floor(Math.random() * 6);
+                let r2 = Math.floor(Math.random() * 6);
+                let r3 = Math.floor(Math.random() * 6);
+                let r4 = Math.floor(Math.random() * 6);
+
+                document.getElementById('diceAiBox').textContent = `${diceFaces[r1]} ${diceFaces[r2]}`;
+                document.getElementById('dicePlayerBox').textContent = `${diceFaces[r3]} ${diceFaces[r4]}`;
+                count++;
+
+                if (count > 10) {
+                    clearInterval(rollInterval);
+                    finishDiceDuel(betInput);
+                }
+            }, 80);
+        }
+
+        function finishDiceDuel(betInput) {
+            const rollBtn = document.getElementById('diceRollBtn');
+            
+            let opp1 = Math.floor(Math.random() * 6) + 1;
+            let opp2 = Math.floor(Math.random() * 6) + 1;
+            let p1 = Math.floor(Math.random() * 6) + 1;
+            let p2 = Math.floor(Math.random() * 6) + 1;
+
+            let oppTotal = opp1 + opp2;
+            let playerTotal = p1 + p2;
+
+            document.getElementById('diceAiBox').textContent = `${diceFaces[opp1-1]} ${diceFaces[opp2-1]}`;
+            document.getElementById('dicePlayerBox').textContent = `${diceFaces[p1-1]} ${diceFaces[p2-1]}`;
+
+            document.getElementById('diceAiScore').textContent = oppTotal;
+            document.getElementById('dicePlayerScore').textContent = playerTotal;
+
+            let oppName = (diceMode === 'ai') ? 'Yapay Zeka' : 'Oyuncu 2';
+
+            if (playerTotal > oppTotal) {
+                playAudio('win');
+                let winAmt = betInput * 2;
+                balance += winAmt;
+                updateBalanceDisplay();
+                document.getElementById('diceMessage').textContent = `🎉 Tebrikler! Oyuncu 1 kazandı (+${winAmt} TL)`;
+            } else if (playerTotal < oppTotal) {
+                playAudio('lose');
+                document.getElementById('diceMessage').textContent = `💥 ${oppName} kazandı! Oyuncu 1 kaybetti (-${betInput} TL)`;
+            } else {
+                playAudio('win');
+                balance += betInput;
+                updateBalanceDisplay();
+                document.getElementById('diceMessage').textContent = `🤝 Berabere! Bahis iade edildi.`;
+            }
+
+            rollBtn.disabled = false;
+        }
+
+
+        /* ==========================================================================
+           8. RULET TEK SAYI LOGIC[cite: 1]
+           ========================================================================== */
+        let selectedRouletteNum = null;
+
+        function initRouletteGrid() {
+            const grid = document.getElementById('rouletteNumberGrid');
+            grid.innerHTML = '';
+            selectedRouletteNum = null;
+            document.getElementById('selectedRouletteNumber').textContent = 'Seçilmedi';
+            document.getElementById('rouletteResultDisplay').textContent = '?';
+
+            for (let i = 0; i <= 36; i++) {
+                const btn = document.createElement('button');
+                btn.className = "w-9 h-9 rounded-lg bg-slate-800 hover:bg-amber-600 text-xs font-bold text-amber-300 border border-amber-500/30 transition flex items-center justify-center";
+                btn.textContent = i;
+                btn.onclick = () => {
+                    playAudio('click');
+                    document.querySelectorAll('#rouletteNumberGrid button').forEach(b => b.classList.remove('bg-amber-500', 'text-black'));
+                    btn.classList.add('bg-amber-500', 'text-black');
+                    selectedRouletteNum = i;
+                    document.getElementById('selectedRouletteNumber').textContent = i;
+                };
+                grid.appendChild(btn);
+            }
+        }
+
+        function spinRoulette() {
+            if (selectedRouletteNum === null) {
+                alert('Lütfen rulet çarkından oynamak için bir sayı seçin!');
+                return;
+            }
+
+            playAudio('click');
+            const betInput = parseInt(document.getElementById('rouletteBetInput').value);
+            if (isNaN(betInput) || betInput <= 0) { alert('Geçerli bir bahis girin!'); return; }
+            if (betInput > balance) { alert('Bakiye yetersiz!'); return; }
+
+            balance -= betInput;
+            updateBalanceDisplay();
+
+            const spinBtn = document.getElementById('rouletteSpinBtn');
+            spinBtn.disabled = true;
+
+            document.getElementById('rouletteMessage').textContent = 'Rulet çarkı dönüyor...';
+
+            let count = 0;
+            let spinInterval = setInterval(() => {
+                playAudio('spin');
+                let randNum = Math.floor(Math.random() * 37);
+                document.getElementById('rouletteResultDisplay').textContent = randNum;
+                count++;
+
+                if (count > 12) {
+                    clearInterval(spinInterval);
+                    finishRoulette(betInput);
+                }
+            }, 90);
+        }
+
+        function finishRoulette(betInput) {
+            const spinBtn = document.getElementById('rouletteSpinBtn');
+            let winningNum = Math.floor(Math.random() * 37);
+
+            document.getElementById('rouletteResultDisplay').textContent = winningNum;
+
+            if (winningNum === selectedRouletteNum) {
+                playAudio('win');
+                let winAmt = betInput * 35;
+                balance += winAmt;
+                updateBalanceDisplay();
+                document.getElementById('rouletteMessage').textContent = `🎯 İNANILMAZ! ${winningNum} geldi ve BÜYÜK İKRAMİYEYİ KAZANDIN (+${winAmt} TL)!`;
+            } else {
+                playAudio('lose');
+                document.getElementById('rouletteMessage').textContent = `💥 Çark ${winningNum} üzerinde durdu. Kaybettin (-${betInput} TL).`;
+            }
+
+            spinBtn.disabled = false;
+        }
+
+        // Başlangıç Yüklemesi[cite: 1]
+        updateBalanceDisplay();
+    </script>
+</body>
+</html>
