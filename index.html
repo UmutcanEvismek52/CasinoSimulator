@@ -300,18 +300,52 @@
                     </div>
                 </div>
 
-                <!-- Oyun 7: Rulet Tek Sayı -->
-                <div class="casino-panel rounded-2xl p-4 border border-amber-500/40 hover:border-amber-400 transition sm:col-span-2 lg:col-span-3 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <!-- Oyun 7: Sweet Bonanza -->
+                <div class="casino-panel rounded-2xl p-4 border border-amber-500/40 hover:border-amber-400 transition flex flex-col justify-between">
+                    <div>
+                        <div class="text-3xl mb-2">🍬</div>
+                        <h3 class="font-bold text-base text-amber-300">Sweet Bonanza</h3>
+                        <p class="text-xs text-gray-300 mt-1">Renkli şekerler ve bomba çarpanlarla tatlı kazançlar!</p>
+                    </div>
+                    <div class="mt-4 flex gap-2">
+                        <button onclick="playAudio('click'); openGameWithTutorial('sweetScreen');" class="flex-1 btn-gold py-2 rounded-xl text-xs font-bold uppercase">
+                            OYNA &rarr;
+                        </button>
+                        <button onclick="playAudio('click'); openManualTutorial('sweet');" class="bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/40 px-3 py-2 rounded-xl text-xs font-bold" title="Nasıl Oynanır?">
+                            ❓
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Oyun 8: Rus Ruleti -->
+                <div class="casino-panel rounded-2xl p-4 border border-amber-500/40 hover:border-amber-400 transition flex flex-col justify-between">
+                    <div>
+                        <div class="text-3xl mb-2">🔫</div>
+                        <h3 class="font-bold text-base text-amber-300">Rus Ruleti</h3>
+                        <p class="text-xs text-gray-300 mt-1">Altıpatlar silahsız şans testi! Risk ve yüksek ödül.</p>
+                    </div>
+                    <div class="mt-4 flex gap-2">
+                        <button onclick="playAudio('click'); openGameWithTutorial('russianScreen');" class="flex-1 btn-gold py-2 rounded-xl text-xs font-bold uppercase">
+                            OYNA &rarr;
+                        </button>
+                        <button onclick="playAudio('click'); openManualTutorial('russian');" class="bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/40 px-3 py-2 rounded-xl text-xs font-bold" title="Nasıl Oynanır?">
+                            ❓
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Oyun 9: Rulet Tek Sayı -->
+                <div class="casino-panel rounded-2xl p-4 border border-amber-500/40 hover:border-amber-400 transition sm:col-span-2 lg:col-span-1 flex flex-col justify-between">
                     <div>
                         <div class="text-3xl mb-2">🎯</div>
-                        <h3 class="font-bold text-base text-amber-300">Rulet Tek Sayı (35x Çarpan)</h3>
-                        <p class="text-xs text-gray-300 mt-1">0 ile 36 arasında şanslı sayını seç, çarkı döndür ve 35 katı büyük ödülü kazan!</p>
+                        <h3 class="font-bold text-base text-amber-300">Rulet Tek Sayı (35x)</h3>
+                        <p class="text-xs text-gray-300 mt-1">0-36 arası şanslı sayını seç, 35 katı ödülü kap!</p>
                     </div>
-                    <div class="flex gap-2 w-full sm:w-auto">
-                        <button onclick="playAudio('click'); openGameWithTutorial('rouletteScreen');" class="flex-1 sm:flex-initial px-5 py-2.5 btn-gold rounded-xl text-xs font-bold uppercase whitespace-nowrap">
-                            RULET OYNA &rarr;
+                    <div class="mt-4 flex gap-2">
+                        <button onclick="playAudio('click'); openGameWithTutorial('rouletteScreen');" class="flex-1 btn-gold py-2 rounded-xl text-xs font-bold uppercase">
+                            OYNA &rarr;
                         </button>
-                        <button onclick="playAudio('click'); openManualTutorial('roulette');" class="bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/40 px-3 py-2.5 rounded-xl text-xs font-bold" title="Nasıl Oynanır?">
+                        <button onclick="playAudio('click'); openManualTutorial('roulette');" class="bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/40 px-3 py-2 rounded-xl text-xs font-bold" title="Nasıl Oynanır?">
                             ❓
                         </button>
                     </div>
@@ -639,7 +673,82 @@
             </div>
         </div>
 
-        <!-- 8. RULET TEK SAYI EKRANI -->
+        <!-- 8. SWEET BONANZA EKRANI -->
+        <div id="sweetScreen" class="w-full casino-panel rounded-3xl p-5 md:p-8 hidden">
+            <div class="flex items-center justify-between mb-3 border-b border-amber-500/30 pb-3">
+                <div class="flex items-center gap-3">
+                    <h2 class="cinzel-font text-lg md:text-xl font-bold gold-text">🍬 SWEET BONANZA</h2>
+                    <button onclick="playAudio('click'); openManualTutorial('sweet');" class="text-xs bg-amber-500/20 hover:bg-amber-500/40 text-amber-300 border border-amber-500/40 px-2.5 py-1 rounded-lg font-semibold transition">
+                        📖 Nasıl Oynanır?
+                    </button>
+                </div>
+                <button onclick="playAudio('click'); goToMainMenu();" class="text-xs bg-red-900/60 hover:bg-red-800 text-red-200 border border-red-500/50 px-3 py-1.5 rounded-xl font-semibold transition">
+                    &larr; Ana Menü
+                </button>
+            </div>
+
+            <div class="bg-black/50 border border-amber-500/30 rounded-2xl p-4 my-3 text-center">
+                <div class="flex items-center justify-center gap-3 mb-3">
+                    <div class="text-3xl">🍭</div>
+                    <div>
+                        <div class="text-[10px] text-pink-300 uppercase font-bold">Bomba Çarpanı</div>
+                        <div id="sweetMultiplierDisplay" class="text-2xl font-black text-pink-400">1x</div>
+                    </div>
+                </div>
+                <div id="sweetGrid" class="grid grid-cols-4 gap-2 max-w-xs mx-auto p-2 bg-pink-950/40 rounded-xl border border-pink-500/30"></div>
+            </div>
+
+            <div id="sweetMessage" class="text-center font-bold text-xs md:text-sm text-pink-300 mb-3 min-h-[20px]">
+                Şekerleri patlatmak için çevir butonuna bas!
+            </div>
+
+            <div class="flex flex-col sm:flex-row items-center justify-center gap-3">
+                <div class="flex items-center gap-2">
+                    <span class="text-xs text-amber-200 font-semibold">Bahis (TL):</span>
+                    <input type="number" id="sweetBetInput" value="400" min="100" step="100" class="bg-black/60 border border-amber-500/40 rounded-xl px-3 py-2 text-xs w-28 text-center text-amber-300 font-bold focus:outline-none">
+                </div>
+                <button id="sweetSpinBtn" onclick="spinSweetBonanza()" class="btn-gold px-8 py-2.5 rounded-xl text-xs font-bold w-full sm:w-auto">
+                    🍬 ŞEKERLERİ ÇEVİR
+                </button>
+            </div>
+        </div>
+
+        <!-- 9. RUS RULETİ EKRANI -->
+        <div id="russianScreen" class="w-full casino-panel rounded-3xl p-5 md:p-8 hidden">
+            <div class="flex items-center justify-between mb-3 border-b border-amber-500/30 pb-3">
+                <div class="flex items-center gap-3">
+                    <h2 class="cinzel-font text-lg md:text-xl font-bold gold-text">🔫 RUS RULETİ</h2>
+                    <button onclick="playAudio('click'); openManualTutorial('russian');" class="text-xs bg-amber-500/20 hover:bg-amber-500/40 text-amber-300 border border-amber-500/40 px-2.5 py-1 rounded-lg font-semibold transition">
+                        📖 Nasıl Oynanır?
+                    </button>
+                </div>
+                <button onclick="playAudio('click'); goToMainMenu();" class="text-xs bg-red-900/60 hover:bg-red-800 text-red-200 border border-red-500/50 px-3 py-1.5 rounded-xl font-semibold transition">
+                    &larr; Ana Menü
+                </button>
+            </div>
+
+            <div class="bg-black/60 border border-amber-500/30 rounded-2xl p-6 my-4 text-center">
+                <div class="text-6xl my-4" id="russianGunIcon">🔫</div>
+                <div class="text-sm font-bold text-gray-300 mb-2">Silahın Silindiri: <span id="russianStatusText" class="text-amber-400">6 Odacık / 1 Kurşun</span></div>
+                <p class="text-xs text-gray-400 max-w-sm mx-auto">Tetiği çek! Hayatta kalırsan paran katlanır, kurşun patlarsa bahis yanar.</p>
+            </div>
+
+            <div id="russianMessage" class="text-center font-bold text-xs md:text-sm text-amber-300 mb-4 min-h-[20px]">
+                Bahisini belirle ve tetiği çek!
+            </div>
+
+            <div class="flex flex-col sm:flex-row items-center justify-center gap-3">
+                <div class="flex items-center gap-2">
+                    <span class="text-xs text-amber-200 font-semibold">Bahis (TL):</span>
+                    <input type="number" id="russianBetInput" value="500" min="100" step="100" class="bg-black/60 border border-amber-500/40 rounded-xl px-3 py-2 text-xs w-28 text-center text-amber-300 font-bold focus:outline-none">
+                </div>
+                <button id="russianTriggerBtn" onclick="pullRussianTrigger()" class="bg-red-700 hover:bg-red-600 text-white px-8 py-2.5 rounded-xl text-xs font-bold w-full sm:w-auto shadow transition">
+                    🔫 TETİĞİ ÇEK (BAHİSİ KATLA)
+                </button>
+            </div>
+        </div>
+
+        <!-- 10. RULET TEK SAYI EKRANI -->
         <div id="rouletteScreen" class="w-full casino-panel rounded-3xl p-5 md:p-8 hidden">
             <div class="flex items-center justify-between mb-3 border-b border-amber-500/30 pb-3">
                 <div class="flex items-center gap-3">
@@ -890,6 +999,26 @@
                     </ul>
                 `
             },
+            sweet: {
+                icon: "🍬",
+                title: "Sweet Bonanza Nasıl Oynanır?",
+                html: `
+                    <p><b>Amaç:</b> Renkli şekerlemeleri eşleştirerek kazanç sağlamak ve bomba çarpanlarını yakalamaktır.</p>
+                    <ul class="list-disc pl-4 space-y-1 mt-2">
+                        <li><b>Çarpanlar:</b> Çark döndüğünde rastgele bomba çarpanları eklenerek ödülü katlar.</li>
+                    </ul>
+                `
+            },
+            russian: {
+                icon: "🔫",
+                title: "Rus Ruleti Nasıl Oynanır?",
+                html: `
+                    <p><b>Amaç:</b> 6 odacıklı silindire 1 kurşun yerleştirilir. Tetiği çekerek hayatta kalıp bahsi katlamaktır.</p>
+                    <ul class="list-disc pl-4 space-y-1 mt-2">
+                        <li><b>Risk:</b> Kurşun patlarsa bahis kaybedilir. Başarılı her atış paranı katlar.</li>
+                    </ul>
+                `
+            },
             roulette: {
                 icon: "🎯",
                 title: "Rulet Tek Sayı Nasıl Oynanır?",
@@ -910,6 +1039,8 @@
             else if (screenId === 'planeScreen') gameKey = 'plane';
             else if (screenId === 'zeusScreen') gameKey = 'zeus';
             else if (screenId === 'diceScreen') gameKey = 'dice';
+            else if (screenId === 'sweetScreen') gameKey = 'sweet';
+            else if (screenId === 'russianScreen') gameKey = 'russian';
             else if (screenId === 'rouletteScreen') gameKey = 'roulette';
 
             if (localStorage.getItem('skip_tutorial_' + gameKey) === 'true') {
@@ -972,7 +1103,6 @@
             document.getElementById('addedMoneyDisplay').textContent = addedMoney.toLocaleString('tr-TR') + ' TL';
         }
 
-        // Bahis yapılırken önce normal bakiye, yetmezse eklenen para harcanır
         function deductBet(amount) {
             if (balance >= amount) {
                 balance -= amount;
@@ -984,7 +1114,6 @@
             updateBalanceDisplay();
         }
 
-        // Kazanılan para normal bakiyeye eklenir
         function addWinnings(amount) {
             balance += amount;
             updateBalanceDisplay();
@@ -1019,7 +1148,7 @@
         }
 
         function showScreen(screenId) {
-            const screens = ['mainMenuScreen', 'blackjackScreen', 'slotScreen', 'minesScreen', 'planeScreen', 'zeusScreen', 'diceScreen', 'rouletteScreen'];
+            const screens = ['mainMenuScreen', 'blackjackScreen', 'slotScreen', 'minesScreen', 'planeScreen', 'zeusScreen', 'diceScreen', 'sweetScreen', 'russianScreen', 'rouletteScreen'];
             screens.forEach(id => {
                 const el = document.getElementById(id);
                 if (el) el.classList.add('hidden');
@@ -1033,6 +1162,8 @@
                 resetMinesToSetup();
             } else if (screenId === 'zeusScreen') {
                 initZeusGrid();
+            } else if (screenId === 'sweetScreen') {
+                initSweetGrid();
             } else if (screenId === 'rouletteScreen') {
                 initRouletteGrid();
             }
@@ -1747,7 +1878,7 @@
 
 
         /* ==========================================================================
-           7. ZAR DÜELLOSU LOGIC (Yapay Zeka veya Arkadaşa Karşı)
+           7. ZAR DÜELLOSU LOGIC
            ========================================================================== */
         let diceMode = 'ai';
         const diceFaces = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
@@ -1845,7 +1976,154 @@
 
 
         /* ==========================================================================
-           8. RULET TEK SAYI LOGIC
+           8. SWEET BONANZA LOGIC
+           ========================================================================== */
+        const sweetSymbols = ['🍬', '🍭', '🍫', '🍎', '🍇', '🍌', '🍉', '💣'];
+
+        function initSweetGrid() {
+            const grid = document.getElementById('sweetGrid');
+            grid.innerHTML = '';
+            for (let i = 0; i < 16; i++) {
+                const box = document.createElement('div');
+                box.className = "h-12 bg-pink-950/60 border border-pink-500/30 rounded-xl flex items-center justify-center text-2xl shadow";
+                box.textContent = sweetSymbols[Math.floor(Math.random() * (sweetSymbols.length - 1))];
+                grid.appendChild(box);
+            }
+        }
+
+        function spinSweetBonanza() {
+            playAudio('click');
+            const betInput = parseInt(document.getElementById('sweetBetInput').value);
+            if (isNaN(betInput) || betInput <= 0) { alert('Geçerli bir bahis girin!'); return; }
+            if (betInput > (balance + addedMoney)) { alert('Bakiye yetersiz!'); return; }
+
+            deductBet(betInput);
+
+            const btn = document.getElementById('sweetSpinBtn');
+            btn.disabled = true;
+
+            document.getElementById('sweetMessage').textContent = 'Şekerler patlıyor...';
+
+            const grid = document.getElementById('sweetGrid');
+            const boxes = grid.children;
+            let counts = 0;
+
+            let spinInterval = setInterval(() => {
+                playAudio('spin');
+                for (let b of boxes) {
+                    b.textContent = sweetSymbols[Math.floor(Math.random() * (sweetSymbols.length - 1))];
+                }
+                counts++;
+                if (counts > 8) {
+                    clearInterval(spinInterval);
+                    finishSweetRound(betInput);
+                }
+            }, 80);
+        }
+
+        function finishSweetRound(betInput) {
+            const btn = document.getElementById('sweetSpinBtn');
+            const grid = document.getElementById('sweetGrid');
+            const boxes = grid.children;
+
+            const isWinning = godMode ? true : (Math.random() < 0.40);
+            let finalSymbols = [];
+
+            if (isWinning) {
+                let targetSym = '🍭';
+                let targetCount = godMode ? 16 : (Math.floor(Math.random() * 3) + 6);
+                for (let i = 0; i < 16; i++) {
+                    if (i < targetCount) finalSymbols.push(targetSym);
+                    else finalSymbols.push(sweetSymbols[Math.floor(Math.random() * (sweetSymbols.length - 1))]);
+                }
+                finalSymbols.sort(() => Math.random() - 0.5);
+            } else {
+                for (let i = 0; i < 16; i++) {
+                    finalSymbols.push(sweetSymbols[i % (sweetSymbols.length - 1)]);
+                }
+                finalSymbols.sort(() => Math.random() - 0.5);
+            }
+
+            for (let i = 0; i < 16; i++) {
+                boxes[i].textContent = finalSymbols[i];
+            }
+
+            let symCounts = {};
+            for (let s of finalSymbols) {
+                symCounts[s] = (symCounts[s] || 0) + 1;
+            }
+
+            let maxM = 0;
+            let maxS = '';
+            for (let s in symCounts) {
+                if (symCounts[s] > maxM) {
+                    maxM = symCounts[s];
+                    maxS = s;
+                }
+            }
+
+            let bombMultiplier = 1;
+            let hasBomb = godMode ? true : (Math.random() < 0.25);
+            if (hasBomb) {
+                playAudio('thunder');
+                bombMultiplier = godMode ? 50 : (Math.floor(Math.random() * 5) + 2) * 5; // 10x, 20x vb.
+            }
+
+            document.getElementById('sweetMultiplierDisplay').textContent = bombMultiplier + 'x';
+
+            if (maxM >= 6) {
+                playAudio('win');
+                let winAmt = Math.floor(betInput * (maxM * 0.5) * (hasBomb ? (bombMultiplier / 5) : 1));
+                addWinnings(winAmt);
+                document.getElementById('sweetMessage').textContent = `🍬 BOMBACI BOMBA! ${maxM} Adet Şeker ile (+${winAmt} TL) KAZANDIN!`;
+            } else {
+                playAudio('lose');
+                document.getElementById('sweetMessage').textContent = `Yeterli şeker patlamadı, tekrar dene!`;
+            }
+
+            btn.disabled = false;
+        }
+
+
+        /* ==========================================================================
+           9. RUS RULETİ LOGIC
+           ========================================================================== */
+        function pullRussianTrigger() {
+            playAudio('click');
+            const betInput = parseInt(document.getElementById('russianBetInput').value);
+            if (isNaN(betInput) || betInput <= 0) { alert('Geçerli bir bahis girin!'); return; }
+            if (betInput > (balance + addedMoney)) { alert('Bakiye yetersiz!'); return; }
+
+            deductBet(betInput);
+
+            const btn = document.getElementById('russianTriggerBtn');
+            btn.disabled = true;
+
+            document.getElementById('russianMessage').textContent = 'Tetik çekiliyor... 🤞';
+            document.getElementById('russianGunIcon').textContent = '🔄';
+
+            setTimeout(() => {
+                let willSurvive = godMode ? true : (Math.random() > 0.18); // %82 hayatta kalma şansı
+
+                if (willSurvive) {
+                    playAudio('win');
+                    let winAmt = Math.floor(betInput * 2);
+                    addWinnings(winAmt);
+                    document.getElementById('russianGunIcon').textContent = '🔫';
+                    document.getElementById('russianMessage').textContent = `🎉 BOŞ ODA! Tetikten ses çıkmadı, hayatta kaldın (+${winAmt} TL)!`;
+                } else {
+                    playAudio('lose');
+                    document.getElementById('russianGunIcon').textContent = '💥';
+                    document.getElementById('russianMessage').textContent = `💥 PATLADI! Kurşun isabet etti, bahsi kaybettin (-${betInput} TL).`;
+                }
+
+                btn.disabled = false;
+            }, 1000);
+        }
+
+
+        /* ==========================================================================
+           10. RULET TEK SAYI LOGIC
            ========================================================================== */
         let selectedRouletteNum = null;
 
